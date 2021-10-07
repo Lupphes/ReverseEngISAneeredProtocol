@@ -24,16 +24,6 @@ local function LaunchISAMaildissector()
 	local protocolSuccess = 'ok' -- 6f 6b
 	local protocolError = 'err' -- 65 72 72
 
-	-- register = 'Register'
-	-- list = 'List'
-	-- login = 'Login'
-	-- logout = 'Logout'
-
-    local statusCodes = {
-        ok = 'OK',
-        err = 'ERROR'
-    }
-
 	-- Define protocol
 	local isamailproto = Proto(protocolName, protocolName .. ' Protocol')
 
@@ -67,7 +57,12 @@ local function LaunchISAMaildissector()
 		
 		for i = 1, bufferDataLength - 2, 1
 		do
-			parsedDataFromBuffer = parsedDataFromBuffer..Struct.fromhex(tostring(buffer(i,1)))
+			newchar = buffer(i,1):string()
+			if newchar == nil then
+				return
+			else
+				parsedDataFromBuffer = parsedDataFromBuffer .. newchar
+			end
 		end
 
 		print('Data recieved: ' .. parsedDataFromBuffer)
