@@ -3,20 +3,12 @@
 
 #include "client.h"
 
-#include <getopt.h>
-
-#include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-
 using namespace std;
 
 char* address;
 int port;
+
+
 
 void printHelpMessage() {
     std::cout <<
@@ -81,14 +73,19 @@ void parseArguments(int argc, char** argv) {
         }
     }
 
-    if (request_dict.find(argv[args_processed]) == request_dict.end()) {
-        printf("Request %s doesn't exist", argv[args_processed]);
-        exit(1);
-    }
+    printf("%s\n", argv[args_processed]);
+    printf("%p\n", request_dict);
+    printf("%p\n", request_dict[argv[args_processed]]);
+    
+    // if (request_dict.find(argv[args_processed]) == request_dict.end()) {
+    //     printf("Request \"%s\" doesn't exist\n", argv[args_processed]);
+    //     exit(1);
+    // }
+
+    printf("Request: \"%s\"\n", argv[args_processed]);
+    printf("Pointer: \"%p\"\n", request_dict);
 
     RequestMsg* command = request_dict.at(argv[args_processed]);
-
-
     command->validate();
 
 }

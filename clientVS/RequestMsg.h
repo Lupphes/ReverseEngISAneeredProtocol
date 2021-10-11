@@ -72,11 +72,4 @@ class Logout : public RequestMsg {
         int validate();
 };
 
-map<string, RequestMsg*> request_dict {
-        {"register", new Register()},
-        {"login", new Login()},
-        {"list", new List()},
-        {"send", new Send()},
-        {"fetch", new Fetch()},
-        {"logout", new Logout()}
-};
+map<string, RequestMsg*> request_dict;
