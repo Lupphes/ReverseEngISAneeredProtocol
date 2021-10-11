@@ -2,7 +2,10 @@
 #pragma once
 
 #include <string.h>
+#include <vector>
 #include <map>
+#include <iostream>
+
 
 using namespace std;
 
@@ -15,7 +18,10 @@ protected:
 public:
     // Initializer list to initialize request
     RequestMsg(string request, int numberOfArgs);
-    virtual int validate() = 0;
+    virtual string buildString(vector<string> commnadArgs) = 0;
+    int getNumArg();
+    string toBase64(string pass);
+
 };
 
 class Register : public RequestMsg {
@@ -24,7 +30,7 @@ class Register : public RequestMsg {
         Register();
 
     private:
-        int validate();
+        string buildString(vector<string> commnadArgs);
 };
 
 class Login : public RequestMsg {
@@ -33,7 +39,7 @@ class Login : public RequestMsg {
         Login();
 
     private:
-        int validate();
+        string buildString(vector<string> commnadArgs);
 };
 
 class List : public RequestMsg {
@@ -42,7 +48,7 @@ class List : public RequestMsg {
         List();
 
     private:
-        int validate();
+        string buildString(vector<string> commnadArgs);
 };
 
 class Fetch : public RequestMsg {
@@ -51,7 +57,7 @@ class Fetch : public RequestMsg {
         Fetch();
 
     private:
-        int validate();
+        string buildString(vector<string> commnadArgs);
 };
 
 class Send : public RequestMsg {
@@ -60,7 +66,7 @@ class Send : public RequestMsg {
         Send();
 
     private:
-        int validate();
+        string buildString(vector<string> commnadArgs);
 };
 
 class Logout : public RequestMsg {
@@ -69,7 +75,5 @@ class Logout : public RequestMsg {
         Logout();
 
     private:
-        int validate();
+        string buildString(vector<string> commnadArgs);
 };
-
-map<string, RequestMsg*> request_dict;

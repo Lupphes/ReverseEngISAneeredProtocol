@@ -1,13 +1,32 @@
 // client.cpp : Defines the entry point for the application.
 //
 
-#include "client.h"
+#include "RequestMsg.h"
+
+#include <getopt.h>
+#include <vector>
+#include <iostream>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 
 using namespace std;
 
-char* address;
-int port;
+string address = "localhost";
+int port = 32323;
 
+map<string, RequestMsg*> request_dict = {
+        {"register", new Register()},
+        {"login", new Login()},
+        {"list", new List()},
+        {"send", new Send()},
+        {"fetch", new Fetch()},
+        {"logout", new Logout()}
+};
 
 
 void printHelpMessage() {
@@ -33,8 +52,13 @@ void printHelpMessage() {
     exit(1);
 }
 
-void parseArguments(int argc, char** argv) {
+string parseArguments(int argc, char** argv) {
     int args_processed = 1;
+
+    if (argc == 1) {
+        printf("client: expects <command> [<args>] ... on the command line, given 0 arguments\n");
+        exit(1);
+    }
 
     const char* const short_opts = "a:p:h";
     const option long_opts[] = {
@@ -44,25 +68,21 @@ void parseArguments(int argc, char** argv) {
             {nullptr, no_argument, nullptr, 0}
     };
 
-    while (true)
-    {
+    while (true) {
         const auto opt = getopt_long(argc, argv, short_opts, long_opts, nullptr);
 
         if (-1 == opt)
             break;
 
-        switch (opt)
-        {
+        switch (opt) {
         case 'a':
             address = optarg;
             args_processed += 2;
-            std::cout << "Address is set to: " << address << std::endl;
             break;
 
         case 'p':
             port = std::stoi(optarg);
             args_processed += 2;
-            std::cout << "Port is set to: " << port << std::endl;
             break;
 
         case 'h': // -h or --help
@@ -73,26 +93,32 @@ void parseArguments(int argc, char** argv) {
         }
     }
 
-    printf("%s\n", argv[args_processed]);
-    printf("%p\n", request_dict);
-    printf("%p\n", request_dict[argv[args_processed]]);
-    
-    // if (request_dict.find(argv[args_processed]) == request_dict.end()) {
-    //     printf("Request \"%s\" doesn't exist\n", argv[args_processed]);
-    //     exit(1);
-    // }
+    if (argv[args_processed] == 0 || request_dict.find(argv[args_processed]) == request_dict.end()) {
+        printf("unknown command\n");
+        exit(1);
+    }
 
-    printf("Request: \"%s\"\n", argv[args_processed]);
-    printf("Pointer: \"%p\"\n", request_dict);
+    printf("Address is set to: %s \nPort is set to: %d\n", address.c_str(), port);
 
     RequestMsg* command = request_dict.at(argv[args_processed]);
-    command->validate();
+    if (args_processed + command->getNumArg() != argc - 1) {
+        //command->getError()
+        printf("Incorrect number of arugments\n");
+        exit(1);
+    }
+    
+    vector<string> commnadArgs;
+    for (int i = args_processed + 1; i < argc; i++) {
+        commnadArgs.push_back(argv[i]);
+    }
+
+    return command->buildString(commnadArgs);
 
 }
 
-void sendRequest(int sockfd) {
+void sendRequest(int sockfd, string result) {
     int sendInfo, readInfo;
-    char createMessage[] = "(login  \"test\" \"test\")";
+    char const* createMessage = result.c_str();
     char buffer[1024] = {0};
 
 
@@ -104,7 +130,7 @@ void sendRequest(int sockfd) {
 }
 
 int main(int argc, char **argv) {
-    parseArguments(argc, argv);
+    string result = parseArguments(argc, argv);
 
 
     // Create socket for TCP communication
@@ -121,7 +147,7 @@ int main(int argc, char **argv) {
    
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(address);
+    servaddr.sin_addr.s_addr = inet_addr(address.c_str());
     servaddr.sin_port = htons(port);
    
     // connect the client socket to server socket
@@ -133,7 +159,7 @@ int main(int argc, char **argv) {
         printf("Connected to server!\n");
    
     // function for chat
-    sendRequest(socks);
+    sendRequest(socks, result);
    
     // close the socket
     close(socks);
