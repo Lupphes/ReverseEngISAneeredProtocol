@@ -30,8 +30,7 @@ map<string, RequestMsg*> request_dict = {
 };
 
 void printHelpMessage() {
-    std::cout <<
-            "usage: client [ <option> ... ] <command> [<args>] ...\n\n"
+    printf( "usage: client [ <option> ... ] <command> [<args>] ...\n\n"
             "<option> is one of\n\n"
             "-a <addr>, --address <addr>\n"
             "\tServer hostname or address to connect to\n"
@@ -44,11 +43,11 @@ void printHelpMessage() {
             "Multiple single-letter switches can be combined after\n"
             "Supported commands:\n"
             "\tregister <username> <password>\n"
-            "\tlogin <username> <password>\n";
-            "\tlist\n";
-            "\tsend <recipient> <subject> <body>\n";
-            "\tfetch <id>\n";
-            "\tlogout\n";
+            "\tlogin <username> <password>\n"
+            "\tlist\n"
+            "\tsend <recipient> <subject> <body>\n"
+            "\tfetch <id>\n"
+            "\tlogout\n");
     exit(1);
 }
 
@@ -117,11 +116,6 @@ string parseArguments(int argc, char** argv) {
         exit(1);
     }
     return result;
-
-}
-
-int parseMsg() {
-    return 0;
 }
 
 void sendRequest(int sockfd, string result) {
@@ -161,15 +155,13 @@ int main(int argc, char **argv) {
     // connect the client socket to server socket
     if (connect(socks, (sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
         printf("Connection to server failed!\n");
-        exit(0);
+        exit(1);
     }
     else
         printf("Connected to server!\n");
    
-    // function for chat
     sendRequest(socks, result);
-   
-    // close the socket
+
     close(socks);
 
     return 0;

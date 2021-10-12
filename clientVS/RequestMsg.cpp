@@ -170,12 +170,41 @@ string List::buildString(vector<string> commnadArgs) {
     if (RequestMsg::getToken(&token) != 0) {
         return "";
     }
-    string builtStr = "(" + request + " " + token + " " + commnadArgs[0] + ")";
+    string builtStr = "(" + request + " " + token + ")";
     return builtStr;
 }
 
 int List::handleOutput(string out) {
     int retCode = RequestMsg::resultParse(&out);
+    string response = out;
+
+    if (retCode == 0) {
+        response = response.substr(2, response.length() - 1);
+        string message, word;
+        string wordDelimiter = "\" \"";
+        string msgDelimiter = ") (";
+        string result = "\n";
+        int pos = 0;
+        int pos2 = 0; 
+        int index = 1;
+
+        while ((pos = response.find(msgDelimiter)) != string::npos) {
+            message = response.substr(0, pos);
+            message = message.erase(0, 2);
+
+            while ((pos2 = message.find(wordDelimiter)) != string::npos) {
+                word = message.substr(1, pos2 - 1);
+                message.erase(0, pos2 + wordDelimiter.length());
+                message = message.substr(0, message.length() - 1);
+                
+                result += to_string(index) + ":\n  From: " + word.c_str() + "\n  Subject: " + message.c_str() + "\n";
+                index++;
+            }    
+            response.erase(0, pos + msgDelimiter.length());
+        }
+        response = result;
+    }
+    RequestMsg::printResult(&response, retCode);
     return 0;
 }
 
@@ -188,12 +217,29 @@ string Fetch::buildString(vector<string> commnadArgs) {
     if (RequestMsg::getToken(&token) != 0) {
         return "";
     }
-    string builtStr = "(" + request + " " + token + " \"" + commnadArgs[0] + "\")";
+    string builtStr = "(" + request + " " + token + " " + commnadArgs[0] + ")";
     return builtStr;
 }
 
 int Fetch::handleOutput(string out) {
     int retCode = RequestMsg::resultParse(&out);
+    string response = out;      
+    if (retCode == 0) {
+        string from, subject, msg;
+        string delimiter = "\" \"";
+        array<string, 3> t;
+
+        response = response.substr(1, response.length() - 2);
+
+        for (int i = 0; i < t.size() - 1; i++) {
+            t[i] = response.substr(i, response.find(delimiter) + 1); 
+            response.erase(0, t[i].length());
+        }
+        t.back() = response.erase(0,1);
+
+        response = "\n\nFrom: " + t[0].substr(1, t[0].length() - 2) + "\nSubject: " + t[1].substr(1, t[1].length() - 3) + "\n\n" + t[2].substr(1, t[2].length() - 2);
+    }
+    RequestMsg::printResult(&response, retCode);
     return 0;
 }
 
@@ -212,6 +258,10 @@ string Send::buildString(vector<string> commnadArgs) {
 
 int Send::handleOutput(string out) {
     int retCode = RequestMsg::resultParse(&out);
+    if (retCode == 0) {
+        out.erase(0,1).pop_back();
+    }
+    RequestMsg::printResult(&out, retCode);
     return 0;
 }
 
@@ -235,6 +285,5 @@ int Logout::handleOutput(string out) {
         out.erase(0,1).pop_back();
     }
     RequestMsg::printResult(&out, code + retCode);
-
     return 0;
 }
