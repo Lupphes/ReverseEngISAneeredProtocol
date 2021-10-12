@@ -27,8 +27,7 @@ public:
     virtual int handleOutput(string out) = 0;
     int resultParse(string* out);
     void printResult(string* result, int code);
-    
-
+    virtual void getError() = 0;
 };
 
 class Register : public RequestMsg {
@@ -39,6 +38,7 @@ class Register : public RequestMsg {
     private:
         string buildString(vector<string> commnadArgs);
         int handleOutput(string out);
+        void getError();
 };
 
 class Login : public RequestMsg {
@@ -49,6 +49,7 @@ class Login : public RequestMsg {
     private:
         string buildString(vector<string> commnadArgs);
         int handleOutput(string out);
+        void getError();
 };
 
 class List : public RequestMsg {
@@ -59,6 +60,7 @@ class List : public RequestMsg {
     private:
         string buildString(vector<string> commnadArgs);
         int handleOutput(string out);
+        void getError();
 };
 
 class Fetch : public RequestMsg {
@@ -69,6 +71,7 @@ class Fetch : public RequestMsg {
     private:
         string buildString(vector<string> commnadArgs);
         int handleOutput(string out);
+        void getError();
 };
 
 class Send : public RequestMsg {
@@ -79,6 +82,7 @@ class Send : public RequestMsg {
     private:
         string buildString(vector<string> commnadArgs);
         int handleOutput(string out);
+        void getError();
 };
 
 class Logout : public RequestMsg {
@@ -89,4 +93,5 @@ class Logout : public RequestMsg {
     private:
         string buildString(vector<string> commnadArgs);
         int handleOutput(string out);
+        void getError();
 };

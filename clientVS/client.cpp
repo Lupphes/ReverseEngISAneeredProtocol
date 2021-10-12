@@ -29,8 +29,19 @@ map<string, RequestMsg*> request_dict = {
         {"logout", new Logout()}
 };
 
+enum returnCodes {
+    SUCCESS = 0,
+    ERR_NO_ARGS,
+    ERR_ARG,
+    ERR_UNKNOWN_COMMAND,
+    ERR_BUILDING_STRING,
+    ERR_SOCKET_ERROR,
+    ERR_SERVER_CONNECTION
+};
+
+
 void printHelpMessage() {
-    printf( "usage: client [ <option> ... ] <command> [<args>] ...\n\n"
+    cout << "usage: client [ <option> ... ] <command> [<args>] ...\n\n"
             "<option> is one of\n\n"
             "-a <addr>, --address <addr>\n"
             "\tServer hostname or address to connect to\n"
@@ -47,16 +58,16 @@ void printHelpMessage() {
             "\tlist\n"
             "\tsend <recipient> <subject> <body>\n"
             "\tfetch <id>\n"
-            "\tlogout\n");
-    exit(1);
+            "\tlogout\n";
+    exit(returnCodes::SUCCESS);
 }
 
-string parseArguments(int argc, char** argv) {
+string parseArgsBuildString(int argc, char** argv) {
     int args_processed = 1;
 
     if (argc == 1) {
         printf("client: expects <command> [<args>] ... on the command line, given 0 arguments\n");
-        exit(1);
+        exit(ERR_NO_ARGS);
     }
 
     const char* const short_opts = "a:p:h";
@@ -74,36 +85,37 @@ string parseArguments(int argc, char** argv) {
             break;
 
         switch (opt) {
-        case 'a':
-            address = optarg;
-            args_processed += 2;
-            break;
+            case 'a':
+                address = optarg;
+                args_processed += 2;
+                break;
 
-        case 'p':
-            port = std::stoi(optarg);
-            args_processed += 2;
-            break;
+            case 'p':
+                port = std::stoi(optarg);
+                args_processed += 2;
+                break;
 
-        case 'h': // -h or --help
-        case '?': // Unrecognized option
-        default:
-            printHelpMessage();
-            break;
+            case 'h': // -h or --help
+            case '?': // Unrecognized option
+            default:
+                printHelpMessage();
+                break;
         }
     }
 
     if (argv[args_processed] == 0 || request_dict.find(argv[args_processed]) == request_dict.end()) {
-        printf("unknown command\n");
-        exit(1);
+        cout << "unknown command\n";
+        exit(returnCodes::ERR_ARG);
     }
 
-    printf("Address is set to: %s \nPort is set to: %d\n", address.c_str(), port);
-
     command = request_dict.at(argv[args_processed]);
+
+    // Debuging string for printing out the address and port
+    // cout << "Address is set to: " + address + "\nPort is set to: " + to_string(port) + "\n";
+
     if (args_processed + command->getNumArg() != argc - 1) {
-        //command->getError()
-        printf("Incorrect number of arugments\n");
-        exit(1);
+        command->getError();
+        exit(returnCodes::ERR_UNKNOWN_COMMAND);
     }
     
     vector<string> commnadArgs;
@@ -113,56 +125,50 @@ string parseArguments(int argc, char** argv) {
 
     string result;
     if ((result = command->buildString(commnadArgs)) == "") {
-        exit(1);
+        exit(returnCodes::ERR_BUILDING_STRING);
     }
     return result;
 }
 
-void sendRequest(int sockfd, string result) {
-    int sendInfo, readInfo;
-    char const* createMessage = result.c_str();
+void sendDataToServer(int sock, string result) {
+    int sendCode, readCode;
+    char const* builtString = result.c_str();
     char buffer[1024] = {0};
 
-    sendInfo = send(sockfd, createMessage, strlen(createMessage), 0);
-    readInfo = read(sockfd, buffer, 1024);
-
-    // printf("%s\n", buffer);
+    sendCode = send(sock, builtString, strlen(builtString), 0);
+    readCode = read(sock, buffer, 1024);
 
     command->handleOutput(buffer);
 }
 
 int main(int argc, char **argv) {
-    string result = parseArguments(argc, argv);
+    string builtString = parseArgsBuildString(argc, argv);
 
-
-    // Create socket for TCP communication
-    int socks = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in servaddr, cli;
+    // TCP Client code
+    // Creating a socket
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in ipAddress;
    
-    if (socks == -1) {
-        printf("Socket couldn't be created!\n");
-        exit(1);
+    // Creating of the socket for comunication
+    if (sock == -1) {
+        cout << "Can't create a socket\n";
+        exit(returnCodes::ERR_SOCKET_ERROR);
     }
-    else
-        printf("Socket was created!\n");
-    bzero(&servaddr, sizeof(servaddr));
    
-    // assign IP, PORT
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(address.c_str());
-    servaddr.sin_port = htons(port);
+    // Prepare connection
+    ipAddress.sin_family = AF_INET;
+    ipAddress.sin_addr.s_addr = inet_addr(address.c_str());
+    ipAddress.sin_port = htons(port);
    
-    // connect the client socket to server socket
-    if (connect(socks, (sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
-        printf("Connection to server failed!\n");
-        exit(1);
+    // Connection to the socket 
+    if (connect(sock, (sockaddr*)&ipAddress, sizeof(ipAddress)) < 0) {
+        cout << "Client can't connect to the server\n";
+        exit(returnCodes::ERR_SERVER_CONNECTION);
     }
-    else
-        printf("Connected to server!\n");
    
-    sendRequest(socks, result);
+    sendDataToServer(sock, builtString);
 
-    close(socks);
+    close(sock);
 
-    return 0;
+    return returnCodes::SUCCESS;
 }

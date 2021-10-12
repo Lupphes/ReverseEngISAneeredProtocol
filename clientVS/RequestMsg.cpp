@@ -119,6 +119,8 @@ int RequestMsg::getNumArg() {
     return RequestMsg::numberOfArgs;
 }
 
+void RequestMsg::getError() {}
+
 Register::Register(): RequestMsg("register", 2) {
     
 }
@@ -136,6 +138,10 @@ int Register::handleOutput(string out) {
     }
     RequestMsg::printResult(&out, retCode);
     return 0;
+}
+
+void Register::getError() {
+    cout << "register <username> <password>";
 }
 
 Login::Login(): RequestMsg("login", 2) {
@@ -159,6 +165,10 @@ int Login::handleOutput(string out) {
     RequestMsg::printResult(&response, retCode);
 
     return 0;
+}
+
+void Login::getError() {
+    cout << "login <username> <password>";
 }
 
 List::List(): RequestMsg("list", 0) {
@@ -208,6 +218,10 @@ int List::handleOutput(string out) {
     return 0;
 }
 
+void List::getError() {
+    cout << "list";
+}
+
 Fetch::Fetch(): RequestMsg("fetch", 1) {
     
 }
@@ -243,6 +257,10 @@ int Fetch::handleOutput(string out) {
     return 0;
 }
 
+void Fetch::getError() {
+    cout << "fetch <id>";
+}
+
 Send::Send(): RequestMsg("send", 3) {
     
 }
@@ -263,6 +281,10 @@ int Send::handleOutput(string out) {
     }
     RequestMsg::printResult(&out, retCode);
     return 0;
+}
+
+void Send::getError() {
+    cout << "send <recipient> <subject> <body>";
 }
 
 Logout::Logout(): RequestMsg("logout", 0){
@@ -286,4 +308,8 @@ int Logout::handleOutput(string out) {
     }
     RequestMsg::printResult(&out, code + retCode);
     return 0;
+}
+
+void Logout::getError() {
+    cout << "logout";
 }
