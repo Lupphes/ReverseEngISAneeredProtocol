@@ -112,7 +112,11 @@ string parseArguments(int argc, char** argv) {
         commnadArgs.push_back(argv[i]);
     }
 
-    return command->buildString(commnadArgs);
+    string result;
+    if ((result = command->buildString(commnadArgs)) == "") {
+        exit(1);
+    }
+    return result;
 
 }
 

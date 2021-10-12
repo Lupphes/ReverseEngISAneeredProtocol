@@ -21,11 +21,13 @@ public:
     virtual string buildString(vector<string> commnadArgs) = 0;
     int getNumArg();
     string toBase64(string pass);
-    string getToken();
+    int getToken(string* token);
     int createToken(string token);
+    int removeToken();
     virtual int handleOutput(string out) = 0;
     int resultParse(string* out);
     void printResult(string* result, int code);
+    
 
 };
 

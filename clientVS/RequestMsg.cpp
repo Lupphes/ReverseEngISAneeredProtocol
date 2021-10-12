@@ -17,7 +17,6 @@ int RequestMsg::resultParse(string* out) {
         exit(1);
     }
     (*out).erase(0,1).pop_back();
-    printf("%s\n", (*out).c_str());
     if ((*out).rfind("ok", 0) == 0) {
         (*out).erase(0,3);
     } else {
@@ -53,14 +52,14 @@ string RequestMsg::toBase64(string pass) {
     
 }
 
-string RequestMsg::getToken() {
+int RequestMsg::getToken(string* token) {
     string filename = "login-token.txt";
     fstream tokenFile;
-    string readToken;
 
 	tokenFile.open(filename, ios::in);
 	if (!tokenFile) {
-		cout << "No such file";
+		printf("Not logged in\n");
+        return 1;
 	}
 	else {
         char ch;
@@ -68,12 +67,12 @@ string RequestMsg::getToken() {
 			tokenFile >> ch;
 			if (tokenFile.eof())
 				break;
-			readToken += ch;
+			(*token) += ch;
 		}
 	}
 	tokenFile.close();
     
-    return readToken;
+    return 0;
 }
 
 int RequestMsg::createToken(string token) {
@@ -82,15 +81,26 @@ int RequestMsg::createToken(string token) {
 
     tokenFile.open(filename, ios::out);
     if (!tokenFile) {
-		cout << "File not created!\n";
+		printf("File not created!\n");
         return 1;
 	}
 	else {
-		cout << "File created successfully!\n";
+		printf("File created successfully!\n");
         tokenFile << token;
 	}
     tokenFile.close();
     return 0;
+}
+
+int RequestMsg::removeToken() {
+    int status;
+    string filename = "login-token.txt";
+    status = remove(filename.c_str());
+    if (status == 0)
+        printf("File deleted successfully!\n");
+    else
+        printf("File not deleted!\n");
+    return status;
 }
 
 RequestMsg::RequestMsg(string request, int numberOfArgs): request(request), numberOfArgs(numberOfArgs) {
@@ -121,9 +131,10 @@ string Register::buildString(vector<string> commnadArgs) {
 
 int Register::handleOutput(string out) {
     int retCode = RequestMsg::resultParse(&out);
-
+    if (retCode == 0) {
+        out.erase(0,1).pop_back();
+    }
     RequestMsg::printResult(&out, retCode);
-
     return 0;
 }
 
@@ -155,13 +166,16 @@ List::List(): RequestMsg("list", 0) {
 }
 
 string List::buildString(vector<string> commnadArgs) {
-    string token = RequestMsg::getToken();
+    string token;
+    if (RequestMsg::getToken(&token) != 0) {
+        return "";
+    }
     string builtStr = "(" + request + " " + token + " " + commnadArgs[0] + ")";
     return builtStr;
 }
 
 int List::handleOutput(string out) {
-    int result = RequestMsg::resultParse(&out);
+    int retCode = RequestMsg::resultParse(&out);
     return 0;
 }
 
@@ -170,13 +184,16 @@ Fetch::Fetch(): RequestMsg("fetch", 1) {
 }
 
 string Fetch::buildString(vector<string> commnadArgs) {
-    string token = RequestMsg::getToken();
+    string token;
+    if (RequestMsg::getToken(&token) != 0) {
+        return "";
+    }
     string builtStr = "(" + request + " " + token + " \"" + commnadArgs[0] + "\")";
     return builtStr;
 }
 
 int Fetch::handleOutput(string out) {
-    int result = RequestMsg::resultParse(&out);
+    int retCode = RequestMsg::resultParse(&out);
     return 0;
 }
 
@@ -185,13 +202,16 @@ Send::Send(): RequestMsg("send", 3) {
 }
 
 string Send::buildString(vector<string> commnadArgs) {
-    string token = RequestMsg::getToken();
+    string token;
+    if (RequestMsg::getToken(&token) != 0) {
+        return "";
+    }
     string builtStr = "(" + request + " " + token + " \"" + commnadArgs[0] + "\" \"" + commnadArgs[1] + "\" \"" + commnadArgs[2] + "\")";
     return builtStr;
 }
 
 int Send::handleOutput(string out) {
-    int result = RequestMsg::resultParse(&out);
+    int retCode = RequestMsg::resultParse(&out);
     return 0;
 }
 
@@ -200,12 +220,21 @@ Logout::Logout(): RequestMsg("logout", 0){
 }
 
 string Logout::buildString(vector<string> commnadArgs) {
-    string token = RequestMsg::getToken();
+    string token;
+    if (RequestMsg::getToken(&token) != 0) {
+        return "";
+    }
     string builtStr = "(" + request + " " + token + ")";
     return builtStr;
 }
 
 int Logout::handleOutput(string out) {
-    int result = RequestMsg::resultParse(&out);
+    int retCode = RequestMsg::resultParse(&out);
+    int code = removeToken();
+    if (retCode == 0) {
+        out.erase(0,1).pop_back();
+    }
+    RequestMsg::printResult(&out, code + retCode);
+
     return 0;
 }
