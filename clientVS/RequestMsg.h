@@ -21,6 +21,11 @@ public:
     virtual string buildString(vector<string> commnadArgs) = 0;
     int getNumArg();
     string toBase64(string pass);
+    string getToken();
+    int createToken(string token);
+    virtual int handleOutput(string out) = 0;
+    int resultParse(string* out);
+    void printResult(string* result, int code);
 
 };
 
@@ -31,6 +36,7 @@ class Register : public RequestMsg {
 
     private:
         string buildString(vector<string> commnadArgs);
+        int handleOutput(string out);
 };
 
 class Login : public RequestMsg {
@@ -40,6 +46,7 @@ class Login : public RequestMsg {
 
     private:
         string buildString(vector<string> commnadArgs);
+        int handleOutput(string out);
 };
 
 class List : public RequestMsg {
@@ -49,6 +56,7 @@ class List : public RequestMsg {
 
     private:
         string buildString(vector<string> commnadArgs);
+        int handleOutput(string out);
 };
 
 class Fetch : public RequestMsg {
@@ -58,6 +66,7 @@ class Fetch : public RequestMsg {
 
     private:
         string buildString(vector<string> commnadArgs);
+        int handleOutput(string out);
 };
 
 class Send : public RequestMsg {
@@ -67,6 +76,7 @@ class Send : public RequestMsg {
 
     private:
         string buildString(vector<string> commnadArgs);
+        int handleOutput(string out);
 };
 
 class Logout : public RequestMsg {
@@ -76,4 +86,5 @@ class Logout : public RequestMsg {
 
     private:
         string buildString(vector<string> commnadArgs);
+        int handleOutput(string out);
 };

@@ -18,6 +18,7 @@ using namespace std;
 
 string address = "localhost";
 int port = 32323;
+RequestMsg* command;
 
 map<string, RequestMsg*> request_dict = {
         {"register", new Register()},
@@ -27,7 +28,6 @@ map<string, RequestMsg*> request_dict = {
         {"fetch", new Fetch()},
         {"logout", new Logout()}
 };
-
 
 void printHelpMessage() {
     std::cout <<
@@ -100,7 +100,7 @@ string parseArguments(int argc, char** argv) {
 
     printf("Address is set to: %s \nPort is set to: %d\n", address.c_str(), port);
 
-    RequestMsg* command = request_dict.at(argv[args_processed]);
+    command = request_dict.at(argv[args_processed]);
     if (args_processed + command->getNumArg() != argc - 1) {
         //command->getError()
         printf("Incorrect number of arugments\n");
@@ -116,17 +116,21 @@ string parseArguments(int argc, char** argv) {
 
 }
 
+int parseMsg() {
+    return 0;
+}
+
 void sendRequest(int sockfd, string result) {
     int sendInfo, readInfo;
     char const* createMessage = result.c_str();
     char buffer[1024] = {0};
 
-
-    sendInfo = send(sockfd, createMessage, strlen(createMessage), 0 );
+    sendInfo = send(sockfd, createMessage, strlen(createMessage), 0);
     readInfo = read(sockfd, buffer, 1024);
 
+    // printf("%s\n", buffer);
 
-    printf("%s\n", buffer);
+    command->handleOutput(buffer);
 }
 
 int main(int argc, char **argv) {
