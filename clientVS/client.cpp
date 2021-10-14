@@ -20,8 +20,30 @@ using namespace std;
 
 string address = "localhost";
 int port = 32323;
-RequestMsg* command;
 #define bufferLenght 60 // Length of the array set to an average lenght of packet
+
+class RequestHandler {
+public:
+    map<string, RequestMsg*> request_dict = {
+        {"register", new Register()},
+        {"login", new Login()},
+        {"list", new List()},
+        {"send", new Send()},
+        {"fetch", new Fetch()},
+        {"logout", new Logout()}
+    };
+
+
+    RequestHandler() {
+        // Either leave empty or make it private and forbid instantiation using singleton
+    }
+    ~RequestHandler() {
+        map<string, RequestMsg*>::iterator it;
+        for (it = this->request_dict.begin(); it != this->request_dict.end(); it++) {
+            delete it->second;
+        }
+    }
+};
 
 void printHelpMessage() {
     cout << "usage: client [ <option> ... ] <command> [<args>] ...\n\n"
@@ -44,13 +66,13 @@ void printHelpMessage() {
             "\tlogout\n";
 }
 
-string parseArgsBuildString(int argc, char** argv) {
-    int args_processed = 1;
+int parseArgs(int argc, char** argv, int* args_processed) {
+    *args_processed = 1;
     regex regPort("^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$");
 
     if (argc == 1) {
         cerr << "client: expects <command> [<args>] ... on the command line, given 0 arguments\n";
-        exit(returnCodes::ERR_NO_ARGS);
+        return returnCodes::ERR_NO_ARGS;
     }
 
     const char* const short_opts = "a:p:h";
@@ -70,7 +92,7 @@ string parseArgsBuildString(int argc, char** argv) {
         switch (opt) {
             case 'a':
                 address = optarg;
-                args_processed += 2;
+                *args_processed += 2;
                 break;
 
             case 'p':
@@ -81,92 +103,70 @@ string parseArgsBuildString(int argc, char** argv) {
                         port = std::stoi(optarg, nullptr);
                     } catch (const std::invalid_argument & e) {
                         cerr << "Port number is not valid\n";
-                        exit(returnCodes::ERR_ARG);
+                        return returnCodes::ERR_ARG;
                     } catch (const std::out_of_range & e) {
                         cerr << "Port number is out of range\n";
-                        exit(returnCodes::ERR_ARG);
+                        return returnCodes::ERR_ARG;
                     }
                 } else {
                     cerr << "Port number is not a string or not valid\n";
-                    exit(returnCodes::ERR_ARG);
+                    return returnCodes::ERR_ARG;
                 }
-                args_processed += 2;    
+                *args_processed += 2;    
                 break;
 
             case 'h': // -h or --help
             case '?': // Unrecognized option
             default:
                 printHelpMessage();
-                exit(returnCodes::SUCCESS);
+                return returnCodes::PRINT_HELP;
                 break;
         }
     }
-    string test = argv[args_processed];
 
-    // cout << test;
-    if (test.compare("register") == 0)  {
-        command = new Register();
-    }  else if (test.compare("login") == 0){
-        command = new Login();
-    } else if (test.compare("list") == 0){
-        command = new List();
-    } else if (test.compare("send") == 0){
-        command = new Send();
-    } else if (test.compare("fetch") == 0){
-        command = new Fetch();
-    } else if (test.compare("logout") == 0){
-        command = new Logout();
-    } else {
+
+    return returnCodes::SUCCESS;
+}
+
+int buildClientString(int argc, char** argv, int* args_processed, string* builtString, RequestMsg& command) {
+    RequestHandler genMap;
+
+    if (argv[*args_processed] == 0 || genMap.request_dict.find(argv[*args_processed]) == genMap.request_dict.end()) {
         cerr << "unknown command\n";
-        exit(returnCodes::ERR_ARG);
+        return returnCodes::ERR_ARG;
     }
 
-    // map<string, RequestMsg*> request_dict = {
-    //     {"register", new Register()},
-    //     {"login", new Login()},
-    //     {"list", new List()},
-    //     {"send", new Send()},
-    //     {"fetch", new Fetch()},
-    //     {"logout", new Logout()}
-    // };
+    command = *(genMap.request_dict.at(argv[*args_processed]));
 
-    // if (argv[args_processed] == 0 || request_dict.find(argv[args_processed]) == request_dict.end()) {
-    //     cerr << "unknown command\n";
-    //     exit(returnCodes::ERR_ARG);
-    // }
-
-    // command = request_dict.at(argv[args_processed]);
 
     // DEBUG: String for printing out the address and port
     // cout << address << ":" << to_string(port) << endl;
 
-    if (args_processed + command->getNumArg() != argc - 1) {
-        command->getError();
-        delete(command);
-        exit(returnCodes::ERR_UNKNOWN_COMMAND);
+    if ((*args_processed + (&command)->getNumArg()) != (argc - 1)) {
+        command.getError();
+        return returnCodes::ERR_UNKNOWN_COMMAND;
     }
     
     vector<string> commnadArgs;
-    for (int i = args_processed + 1; i < argc; i++) {
+    for (int i = *args_processed + 1; i < argc; i++) {
         commnadArgs.push_back(argv[i]);
     }
 
-    string result;
-    if ((result = command->buildString(commnadArgs)) == "") {
-        delete(command);
-        exit(returnCodes::ERR_BUILDING_STRING);
+    if ((*builtString = (&command)->buildString(commnadArgs)) == "") {
+        return returnCodes::ERR_BUILDING_STRING;
     }
-    return result;
+
+    return returnCodes::SUCCESS;
 }
 
-int sendDataToServer(int sock, string builtString) {
+int sendDataToServer(int* sock, string* builtString, RequestMsg& command) {
     int sendCode, readCode;
     char buffer[bufferLenght] = {0}; 
     string recievedString;
     
-    sendCode = send(sock, builtString.c_str(), builtString.length(), 0);
+    sendCode = send(*sock, builtString->c_str(), builtString->length(), 0);
     if (sendCode != -1) {
-        while (readCode = recv(sock, buffer, bufferLenght, 0)) {
+        while (readCode = recv(*sock, buffer, bufferLenght, 0)) {
             if (readCode == -1) {
                 cerr << "Response cannot be read\n";
                 return returnCodes::ERR_RECV_UNSUCCESSFUL;
@@ -179,35 +179,33 @@ int sendDataToServer(int sock, string builtString) {
         return returnCodes::ERR_SEND_UNSUCCESSFUL;
     }
     
-    if (command->handleOutput(recievedString) != returnCodes::SUCCESS) {
+    if (command.handleOutput(recievedString) != returnCodes::SUCCESS) {
         return returnCodes::ERR_INCORRECT_OUTPUT;
     }
 
     return returnCodes::SUCCESS;
 }
 
-int main(int argc, char **argv) {
-    string builtString = parseArgsBuildString(argc, argv);
-
+int createSocketAndConnect(int* sock) {
     // TCP Client code
-    // Creating a socket
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    
+    // Resolving hostname
     struct sockaddr_in ipAddress;
-    struct hostent *hostname;
+    struct hostent* hostname;
 
     // Prepare connection
     hostname = gethostbyname(address.c_str());
     if (hostname == NULL) {
         cerr << "Couldn't find a host\n";
-        delete(command);
         return returnCodes::ERR_HOST_NOT_RESOLVED;
     }
 
-   
+    // Creating a socket
+    *sock = socket(AF_INET, SOCK_STREAM, 0);
+
     // Creating of the socket for comunication
-    if (sock == -1) {
+    if (*sock == -1) {
         cout << "Can't create a socket\n";
-        delete(command);
         return returnCodes::ERR_SOCKET_ERROR;
     }
    
@@ -219,16 +217,41 @@ int main(int argc, char **argv) {
     // cout << inet_ntoa (*((struct in_addr*)hostname->h_addr_list[0])) << ":" << port << endl;
    
     // Connection to the socket 
-    if (connect(sock, (sockaddr*)&ipAddress, sizeof(ipAddress)) < 0) {
+    if (connect(*sock, (sockaddr*)&ipAddress, sizeof(ipAddress)) < 0) {
         cerr << "Client can't connect to the server\n";
-        delete(command);
-        close(sock);
         return returnCodes::ERR_SERVER_CONNECTION;
     }
-    int status = sendDataToServer(sock, builtString);
-    
-    delete(command);
-    close(sock);
+   
+    return returnCodes::SUCCESS;
+}
 
-    return status;
+
+int main(int argc, char **argv) {
+    int args_processed;
+    string builtString;
+    int retCode;
+
+    RequestMsg* command;
+    int sock;
+    
+    if ((retCode = parseArgs(argc, argv, &args_processed)) != 0) {
+        return retCode;
+    }
+
+    if ((retCode = buildClientString(argc, argv, &args_processed, &builtString, *command)) != 0)  {
+        return retCode;
+    }
+
+    if ((retCode = createSocketAndConnect(&sock)) != 0) {
+        close(sock);
+        return retCode;
+    }
+
+    if ((retCode = sendDataToServer(&sock, &builtString, *command)) != 0) {
+        close(sock);
+        return retCode;
+    }
+
+    close(sock);
+    return returnCodes::SUCCESS;
 }

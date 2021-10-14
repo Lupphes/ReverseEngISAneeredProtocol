@@ -5,7 +5,8 @@
 
 enum returnCodes {
     SUCCESS = 0,
-    ERR_NO_ARGS = 3,
+    PRINT_HELP = 3,
+    ERR_NO_ARGS,
     ERR_ARG,
     ERR_UNKNOWN_COMMAND,
     ERR_BUILDING_STRING,
