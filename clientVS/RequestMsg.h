@@ -24,7 +24,7 @@ public:
     int getToken(string* token);
     int createToken(string token);
     int removeToken();
-    virtual int handleOutput(string out) = 0;
+    virtual int handleOutput(string &out) = 0;
     int resultParse(string* out);
     void printResult(string* result, int code);
     virtual void getError() = 0;
@@ -34,10 +34,8 @@ class Register : public RequestMsg {
     // Call super constructor with message
     public:
         Register();
-
-    private:
         string buildString(vector<string> commnadArgs);
-        int handleOutput(string out);
+        int handleOutput(string &out);
         void getError();
 };
 
@@ -45,10 +43,8 @@ class Login : public RequestMsg {
     // Call super constructor with message
     public:
         Login();
-
-    private:
         string buildString(vector<string> commnadArgs);
-        int handleOutput(string out);
+        int handleOutput(string &out);
         void getError();
 };
 
@@ -56,10 +52,8 @@ class List : public RequestMsg {
     // Call super constructor with message
     public:
         List();
-
-    private:
         string buildString(vector<string> commnadArgs);
-        int handleOutput(string out);
+        int handleOutput(string &out);
         void getError();
 };
 
@@ -68,9 +62,8 @@ class Fetch : public RequestMsg {
     public:
         Fetch();
 
-    private:
         string buildString(vector<string> commnadArgs);
-        int handleOutput(string out);
+        int handleOutput(string &out);
         void getError();
 };
 
@@ -79,9 +72,8 @@ class Send : public RequestMsg {
     public:
         Send();
 
-    private:
         string buildString(vector<string> commnadArgs);
-        int handleOutput(string out);
+        int handleOutput(string &out);
         void getError();
 };
 
@@ -90,8 +82,7 @@ class Logout : public RequestMsg {
     public:
         Logout();
 
-    private:
         string buildString(vector<string> commnadArgs);
-        int handleOutput(string out);
+        int handleOutput(string &out);
         void getError();
 };
