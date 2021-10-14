@@ -85,7 +85,6 @@ int RequestMsg::createToken(string token) {
         return 1;
 	}
 	else {
-		printf("File created successfully!\n");
         tokenFile << token;
 	}
     tokenFile.close();
@@ -141,7 +140,7 @@ int Register::handleOutput(string out) {
 }
 
 void Register::getError() {
-    cout << "register <username> <password>";
+    cout << "register <username> <password>\n";
 }
 
 Login::Login(): RequestMsg("login", 2) {
@@ -168,7 +167,7 @@ int Login::handleOutput(string out) {
 }
 
 void Login::getError() {
-    cout << "login <username> <password>";
+    cout << "login <username> <password>\n";
 }
 
 List::List(): RequestMsg("list", 0) {
@@ -219,7 +218,7 @@ int List::handleOutput(string out) {
 }
 
 void List::getError() {
-    cout << "list";
+    cout << "list\n";
 }
 
 Fetch::Fetch(): RequestMsg("fetch", 1) {
@@ -258,7 +257,7 @@ int Fetch::handleOutput(string out) {
 }
 
 void Fetch::getError() {
-    cout << "fetch <id>";
+    cout << "fetch <id>\n";
 }
 
 Send::Send(): RequestMsg("send", 3) {
@@ -284,7 +283,7 @@ int Send::handleOutput(string out) {
 }
 
 void Send::getError() {
-    cout << "send <recipient> <subject> <body>";
+    cout << "send <recipient> <subject> <body>\n";
 }
 
 Logout::Logout(): RequestMsg("logout", 0){
@@ -311,5 +310,5 @@ int Logout::handleOutput(string out) {
 }
 
 void Logout::getError() {
-    cout << "logout";
+    cout << "logout\n";
 }

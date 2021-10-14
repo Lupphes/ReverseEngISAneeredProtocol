@@ -28,12 +28,14 @@ public:
     int resultParse(string* out);
     void printResult(string* result, int code);
     virtual void getError() = 0;
+    ~RequestMsg();
 };
 
 class Register : public RequestMsg {
     // Call super constructor with message
     public:
         Register();
+        ~Register();
 
     private:
         string buildString(vector<string> commnadArgs);
@@ -45,6 +47,7 @@ class Login : public RequestMsg {
     // Call super constructor with message
     public:
         Login();
+        ~Login();
 
     private:
         string buildString(vector<string> commnadArgs);
@@ -56,6 +59,7 @@ class List : public RequestMsg {
     // Call super constructor with message
     public:
         List();
+        ~List();
 
     private:
         string buildString(vector<string> commnadArgs);
@@ -67,6 +71,7 @@ class Fetch : public RequestMsg {
     // Call super constructor with message
     public:
         Fetch();
+        ~Fetch();
 
     private:
         string buildString(vector<string> commnadArgs);
@@ -78,6 +83,7 @@ class Send : public RequestMsg {
     // Call super constructor with message
     public:
         Send();
+        ~Send();
 
     private:
         string buildString(vector<string> commnadArgs);
@@ -89,6 +95,7 @@ class Logout : public RequestMsg {
     // Call super constructor with message
     public:
         Logout();
+        ~Logout();
 
     private:
         string buildString(vector<string> commnadArgs);
