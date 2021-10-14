@@ -128,7 +128,7 @@ int parseArgs(int argc, char** argv, int* args_processed) {
     return returnCodes::SUCCESS;
 }
 
-int buildClientString(int argc, char** argv, int* args_processed, string* builtString, RequestMsg& command) {
+int buildClientString(int argc, char** argv, int* args_processed, string* builtString, RequestMsg *& command) {
     RequestHandler genMap;
 
     if (argv[*args_processed] == 0 || genMap.request_dict.find(argv[*args_processed]) == genMap.request_dict.end()) {
@@ -136,14 +136,14 @@ int buildClientString(int argc, char** argv, int* args_processed, string* builtS
         return returnCodes::ERR_ARG;
     }
 
-    command = *(genMap.request_dict.at(argv[*args_processed]));
+    command = genMap.request_dict.at(argv[*args_processed]);
 
 
     // DEBUG: String for printing out the address and port
     // cout << address << ":" << to_string(port) << endl;
 
-    if ((*args_processed + (&command)->getNumArg()) != (argc - 1)) {
-        command.getError();
+    if ((*args_processed + command->getNumArg()) != (argc - 1)) {
+        command->getError();
         return returnCodes::ERR_UNKNOWN_COMMAND;
     }
     
@@ -152,14 +152,14 @@ int buildClientString(int argc, char** argv, int* args_processed, string* builtS
         commnadArgs.push_back(argv[i]);
     }
 
-    if ((*builtString = (&command)->buildString(commnadArgs)) == "") {
+    if ((*builtString = command->buildString(commnadArgs)) == "") {
         return returnCodes::ERR_BUILDING_STRING;
     }
 
     return returnCodes::SUCCESS;
 }
 
-int sendDataToServer(int* sock, string* builtString, RequestMsg& command) {
+int sendDataToServer(int* sock, string* builtString, RequestMsg *& command) {
     int sendCode, readCode;
     char buffer[bufferLenght] = {0}; 
     string recievedString;
@@ -179,7 +179,7 @@ int sendDataToServer(int* sock, string* builtString, RequestMsg& command) {
         return returnCodes::ERR_SEND_UNSUCCESSFUL;
     }
     
-    if (command.handleOutput(recievedString) != returnCodes::SUCCESS) {
+    if (command->handleOutput(recievedString) != returnCodes::SUCCESS) {
         return returnCodes::ERR_INCORRECT_OUTPUT;
     }
 
@@ -225,7 +225,6 @@ int createSocketAndConnect(int* sock) {
     return returnCodes::SUCCESS;
 }
 
-
 int main(int argc, char **argv) {
     int args_processed;
     string builtString;
@@ -238,7 +237,7 @@ int main(int argc, char **argv) {
         return retCode;
     }
 
-    if ((retCode = buildClientString(argc, argv, &args_processed, &builtString, *command)) != 0)  {
+    if ((retCode = buildClientString(argc, argv, &args_processed, &builtString, command)) != 0)  {
         return retCode;
     }
 
@@ -247,7 +246,7 @@ int main(int argc, char **argv) {
         return retCode;
     }
 
-    if ((retCode = sendDataToServer(&sock, &builtString, *command)) != 0) {
+    if ((retCode = sendDataToServer(&sock, &builtString, command)) != 0) {
         close(sock);
         return retCode;
     }
