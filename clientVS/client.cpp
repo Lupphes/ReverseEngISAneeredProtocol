@@ -23,15 +23,6 @@ int port = 32323;
 RequestMsg* command;
 #define bufferLenght 60 // Length of the array set to an average lenght of packet
 
-map<string, RequestMsg*> request_dict = {
-        {"register", new Register()},
-        {"login", new Login()},
-        {"list", new List()},
-        {"send", new Send()},
-        {"fetch", new Fetch()},
-        {"logout", new Logout()}
-};
-
 void printHelpMessage() {
     cout << "usage: client [ <option> ... ] <command> [<args>] ...\n\n"
             "<option> is one of\n\n"
@@ -110,19 +101,48 @@ string parseArgsBuildString(int argc, char** argv) {
                 break;
         }
     }
+    string test = argv[args_processed];
 
-    if (argv[args_processed] == 0 || request_dict.find(argv[args_processed]) == request_dict.end()) {
+    // cout << test;
+    if (test.compare("register") == 0)  {
+        command = new Register();
+    }  else if (test.compare("login") == 0){
+        command = new Login();
+    } else if (test.compare("list") == 0){
+        command = new List();
+    } else if (test.compare("send") == 0){
+        command = new Send();
+    } else if (test.compare("fetch") == 0){
+        command = new Fetch();
+    } else if (test.compare("logout") == 0){
+        command = new Logout();
+    } else {
         cerr << "unknown command\n";
         exit(returnCodes::ERR_ARG);
     }
 
-    command = request_dict.at(argv[args_processed]);
+    // map<string, RequestMsg*> request_dict = {
+    //     {"register", new Register()},
+    //     {"login", new Login()},
+    //     {"list", new List()},
+    //     {"send", new Send()},
+    //     {"fetch", new Fetch()},
+    //     {"logout", new Logout()}
+    // };
+
+    // if (argv[args_processed] == 0 || request_dict.find(argv[args_processed]) == request_dict.end()) {
+    //     cerr << "unknown command\n";
+    //     exit(returnCodes::ERR_ARG);
+    // }
+
+    // command = request_dict.at(argv[args_processed]);
 
     // DEBUG: String for printing out the address and port
     // cout << address << ":" << to_string(port) << endl;
 
     if (args_processed + command->getNumArg() != argc - 1) {
         command->getError();
+        delete(command);
         exit(returnCodes::ERR_UNKNOWN_COMMAND);
     }
     
@@ -133,6 +153,7 @@ string parseArgsBuildString(int argc, char** argv) {
 
     string result;
     if ((result = command->buildString(commnadArgs)) == "") {
+        delete(command);
         exit(returnCodes::ERR_BUILDING_STRING);
     }
     return result;
@@ -178,6 +199,7 @@ int main(int argc, char **argv) {
     hostname = gethostbyname(address.c_str());
     if (hostname == NULL) {
         cerr << "Couldn't find a host\n";
+        delete(command);
         return returnCodes::ERR_HOST_NOT_RESOLVED;
     }
 
@@ -185,6 +207,7 @@ int main(int argc, char **argv) {
     // Creating of the socket for comunication
     if (sock == -1) {
         cout << "Can't create a socket\n";
+        delete(command);
         return returnCodes::ERR_SOCKET_ERROR;
     }
    
@@ -198,11 +221,13 @@ int main(int argc, char **argv) {
     // Connection to the socket 
     if (connect(sock, (sockaddr*)&ipAddress, sizeof(ipAddress)) < 0) {
         cerr << "Client can't connect to the server\n";
+        delete(command);
         close(sock);
         return returnCodes::ERR_SERVER_CONNECTION;
     }
     int status = sendDataToServer(sock, builtString);
     
+    delete(command);
     close(sock);
 
     return status;
