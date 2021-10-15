@@ -34,5 +34,6 @@
 Lua/example.lua
 
 .vscode/
-clientVS/client
-clientVS/login-token.txt
+build/
+client/client
+client/login-token.txt

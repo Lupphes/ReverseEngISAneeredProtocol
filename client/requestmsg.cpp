@@ -1,4 +1,4 @@
-#include "RequestMsg.h"
+#include "requestmsg.hpp"
 
 #include <bitset>
 #include <vector>
@@ -14,7 +14,7 @@ void RequestMsg::printResult(string* result, int code) {
 
 int RequestMsg::resultParse(string* out) {
     if ((*out).length() < 4) {
-        exit(1);
+        return 1;
     }
     (*out).erase(0,1).pop_back();
     if ((*out).rfind("ok", 0) == 0) {
@@ -110,7 +110,8 @@ string RequestMsg::buildString(vector<string> commnadArgs) {
     return "";
 }
 
-int RequestMsg::handleOutput(string out) {
+int RequestMsg::handleOutput(string &out) {
+    cout << "handling input from base class" << endl;
     return 0;
 }
 
@@ -130,7 +131,7 @@ string Register::buildString(vector<string> commnadArgs) {
     return builtStr;
 }
 
-int Register::handleOutput(string out) {
+int Register::handleOutput(string &out) {
     int retCode = RequestMsg::resultParse(&out);
     if (retCode == 0) {
         out.erase(0,1).pop_back();
@@ -153,7 +154,7 @@ string Login::buildString(vector<string> commnadArgs) {
     return builtStr;
 }
 
-int Login::handleOutput(string out) {
+int Login::handleOutput(string &out) {
     int retCode = RequestMsg::resultParse(&out);
     string response = out;
     if (retCode == 0) {
@@ -183,7 +184,7 @@ string List::buildString(vector<string> commnadArgs) {
     return builtStr;
 }
 
-int List::handleOutput(string out) {
+int List::handleOutput(string &out) {
     int retCode = RequestMsg::resultParse(&out);
     string response = out;
 
@@ -234,7 +235,7 @@ string Fetch::buildString(vector<string> commnadArgs) {
     return builtStr;
 }
 
-int Fetch::handleOutput(string out) {
+int Fetch::handleOutput(string &out) {
     int retCode = RequestMsg::resultParse(&out);
     string response = out;      
     if (retCode == 0) {
@@ -273,7 +274,7 @@ string Send::buildString(vector<string> commnadArgs) {
     return builtStr;
 }
 
-int Send::handleOutput(string out) {
+int Send::handleOutput(string &out) {
     int retCode = RequestMsg::resultParse(&out);
     if (retCode == 0) {
         out.erase(0,1).pop_back();
@@ -299,7 +300,7 @@ string Logout::buildString(vector<string> commnadArgs) {
     return builtStr;
 }
 
-int Logout::handleOutput(string out) {
+int Logout::handleOutput(string &out) {
     int retCode = RequestMsg::resultParse(&out);
     int code = removeToken();
     if (retCode == 0) {
