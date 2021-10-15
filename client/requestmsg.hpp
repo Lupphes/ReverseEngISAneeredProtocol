@@ -17,15 +17,24 @@ protected:
 public:
     RequestMsg(string request, int numberOfArgs);
     virtual string buildString(vector<string> commnadArgs) = 0;
+    virtual int handleOutput(string &out) = 0;
+    virtual void getError() = 0;
+
     int getNumArg();
+
     string toBase64(string pass);
-    int getToken(string* token);
+
+    int getToken(string &token);
     int createToken(string token);
     int removeToken();
-    virtual int handleOutput(string &out) = 0;
-    int resultParse(string* out);
-    void printResult(string* result, int code);
-    virtual void getError() = 0;
+
+    int resultParse(string &out);
+    void printResult(string &result, int code);
+
+    int escapeChars(vector<string> &input);
+    int unescapeChars(string &input);
+    int isNumber(string number);
+    int splitByRegex(string str, vector<string> &matches);
 };
 
 class Register : public RequestMsg {
