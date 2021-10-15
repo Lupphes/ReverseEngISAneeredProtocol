@@ -36,3 +36,5 @@ Lua/example.lua
 .vscode/
 clientVS/client
 clientVS/login-token.txt
+racket/
+server

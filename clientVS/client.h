@@ -3,17 +3,17 @@
 
 #pragma once
 
-enum returnCodes {
-    SUCCESS = 0,
-    PRINT_HELP = 3,
-    ERR_NO_ARGS,
-    ERR_ARG,
-    ERR_UNKNOWN_COMMAND,
-    ERR_BUILDING_STRING,
-    ERR_HOST_NOT_RESOLVED,
-    ERR_SOCKET_ERROR,
-    ERR_SERVER_CONNECTION,
-    ERR_SEND_UNSUCCESSFUL,
-    ERR_RECV_UNSUCCESSFUL,
-    ERR_INCORRECT_OUTPUT
-};
+#include "errorcodes.hpp"
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <regex>
+#include <getopt.h>
+#include <netdb.h>
+#include <iostream>
+
+using namespace std;
+
+void printHelpMessage();
+int parseArgs(int argc, char** argv, int &args_processed, string& address, int &port);
+int createSocketAndConnect(int &sock, string& address, int &port);
