@@ -246,10 +246,13 @@ int List::handleOutput(string &out) {
         splitByRegex(out, matches);
         string response, from, subject;
 
-        for (size_t i = 1; i <= matches.size()-1; i += 2) {
-            from = matches.at(i-1).substr(1, matches.at(i-1).size() - 2);
-            subject = matches.at(i).substr(1, matches.at(i).size() - 2);
-            response += "\n" + to_string(i - i/2) + ":\n  From: " + from + "\n  Subject: " + subject + "\n";
+        for (uint64_t i = 0; i < matches.size(); i += 2) {
+            from = matches.at(i).substr(1, matches.at(i).size() - 2);
+            subject = matches.at(i+1).substr(1, matches.at(i+1).size() - 2);
+            response += "\n" + to_string(((i + 1)/2)+1) + ":\n  From: " + from + "\n  Subject: " + subject + "\n";
+        }
+        if (not response.empty()) {
+            response.pop_back();
         }
         out = response;
     }
