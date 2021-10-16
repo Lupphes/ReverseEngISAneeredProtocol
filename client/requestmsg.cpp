@@ -152,12 +152,13 @@ int RequestMsg::unescapeChars(string &input) {
                     break;
                 case '\\':
                 case '"':
-                    temp += "\\";
+                    temp += input[i+1];
                     i += 1;
                     break;
                 default:
                     break;
             }
+            continue;
         }
         temp += input[i];
     }
@@ -205,8 +206,8 @@ string Login::buildString(vector<string> commnadArgs) {
 
 int Login::handleOutput(string &out) {
     int retCode = resultParse(out);
-    vector<string> matches;
     if (retCode == returnCodes::SUCCESS) {
+        vector<string> matches;
         splitByRegex(out, matches);
         out = matches.at(0).substr(1, matches.at(0).size() - 2);
         createToken(matches.at(1));
@@ -218,19 +219,16 @@ int Login::handleOutput(string &out) {
 }
 
 int RequestMsg::splitByRegex(string str, vector<string> &matches) { 
-    regex regSpace("\"(\\.|[^\"])*\"");
+    string raw_str = R"(\"(\\.|[^\"])*\")";
+    regex regSpace(raw_str);
     regex regBrac("");
 
-    auto start = sregex_iterator(str.begin(), str.end(), regSpace);
-    auto end = sregex_iterator();
- 
-    for (sregex_iterator i = start; i != end; ++i) {
-        smatch match = *i;                                                 
-        string match_str = match.str(); 
-        // DEBUG: Regex
-        cout << match_str << '\n';
-        matches.push_back(match_str);
-    }  
+   std::smatch match;
+    while (std::regex_search(str, match, regSpace)) {
+        cout << "[" << match.str() << "]" << '\n';
+        matches.push_back(match.str());
+        str = match.suffix().str();
+    }
 
     return returnCodes::SUCCESS;
 }
@@ -239,22 +237,19 @@ void Login::getError() {
     cout << "login <username> <password>\n";
 }
 
-List::List(): RequestMsg("list", 0) {
-    
-}
+List::List(): RequestMsg("list", 0) { }
 
 string List::buildString(vector<string> commnadArgs) {
     string token;
-    if (RequestMsg::getToken(token) != 0) {
+    if (getToken(token) != 0) {
         return "";
     }
-    string builtStr = "(" + request + " " + token + ")";
-    return builtStr;
+    return "(" + request + " " + token + ")";
 }
 
 int List::handleOutput(string &out) {
     cout << out << endl;
-    int retCode = RequestMsg::resultParse(out);
+    int retCode = resultParse(out);
     string response = out;
 
     if (retCode == 0) {
@@ -292,44 +287,62 @@ void List::getError() {
     cout << "list\n";
 }
 
-Fetch::Fetch(): RequestMsg("fetch", 1) {
-    
-}
+Fetch::Fetch(): RequestMsg("fetch", 1) { }
 
 string Fetch::buildString(vector<string> commnadArgs) {
-    if (RequestMsg::isNumber(commnadArgs[0]) != 0) {
+    if (isNumber(commnadArgs[0]) != 0) {
         return "";
     }
     string token;
-    if (RequestMsg::getToken(token) != 0) {
+    if (getToken(token) != 0) {
         return "";
     }
-    string builtStr = "(" + request + " " + token + " " + commnadArgs[0] + ")";
-    return builtStr;
+    return "(" + request + " " + token + " " + commnadArgs[0] + ")";
 }
 
 int Fetch::handleOutput(string &out) {
     cout << out << endl;
-    int retCode = RequestMsg::resultParse(out);
-    string response = out;      
-    if (retCode == 0) {
-        string from, subject, msg;
-        string delimiter = "\" \"";
-        array<string, 3> t;
+    int retCodeParse = resultParse(out);
+    if (retCodeParse == 0) {
+        vector<string> matches;
+        splitByRegex(out, matches);
+        // string from, subject, msg;
+        // string delimiter = "\" \"";
+        // array<string, 3> t;
+        // string response = out;
 
-        response = response.substr(1, response.length() - 2);
+        // response = response.substr(1, response.length() - 2);
 
-        for (size_t i = 0; i < t.size() - 1; i++) {
-            t[i] = response.substr(i, response.find(delimiter) + 1); 
-            response.erase(0, t[i].length());
-        }
-        t.back() = response.erase(0,1);
+        // for (size_t i = 0; i < t.size() - 1; i++) {
+        //     t[i] = response.substr(i, response.find(delimiter) + 1); 
+        //     response.erase(0, t[i].length());
+        // }
+        // t.back() = response.erase(0,1);
 
-        response = "\n\nFrom: " + t[0].substr(1, t[0].length() - 2) + "\nSubject: " + t[1].substr(1, t[1].length() - 3) + "\n\n" + t[2].substr(1, t[2].length() - 2);
+        // string uno = t[0].substr(1, t[0].length() - 2);
+        // string dos = t[1].substr(1, t[1].length() - 3);
+        // string tres = t[2].substr(1, t[2].length() - 2);
+
+        string uno, dos, tres;
+        unescapeChars(uno);
+        unescapeChars(dos);
+        unescapeChars(tres);
+
+        uno = matches.at(0);
+        dos = matches.at(1);
+        tres = matches.at(2);
+
+        uno.substr(1, matches.at(0).size() - 2);
+        dos.substr(1, matches.at(1).size() - 2);
+        tres.substr(1, matches.at(2).size() - 2);
+
+
+
+        
+
+        out = "\n\nFrom: " + uno + "\nSubject: " + dos + "\n\n" + tres;
     }
-    RequestMsg::unescapeChars(response);
-    cout << out << endl;
-    RequestMsg::printResult(response, retCode);
+    printResult(out, retCodeParse);
     return 0;
 }
 
@@ -337,27 +350,24 @@ void Fetch::getError() {
     cout << "fetch <id>\n";
 }
 
-Send::Send(): RequestMsg("send", 3) {
-    
-}
+Send::Send(): RequestMsg("send", 3) { }
 
 string Send::buildString(vector<string> commnadArgs) {
-    RequestMsg::escapeChars(commnadArgs);
+    escapeChars(commnadArgs);
     string token;
-    if (RequestMsg::getToken(token) != 0) {
+    if (getToken(token) != returnCodes::SUCCESS) {
         return "";
     }
-    string builtStr = "(" + request + " " + token + " \"" + commnadArgs[0] + "\" \"" + commnadArgs[1] + "\" \"" + commnadArgs[2] + "\")";
-    return builtStr;
+    return "(" + request + " " + token + " \"" + commnadArgs[0] + "\" \"" + commnadArgs[1] + "\" \"" + commnadArgs[2] + "\")";
 }
 
 int Send::handleOutput(string &out) {
-    int retCode = RequestMsg::resultParse(out);
-    if (retCode == 0) {
-        out.erase(0,1).pop_back();
+    int retCodeParse = resultParse(out);
+    if (retCodeParse == returnCodes::SUCCESS) {
+        out = out.substr(1, out.size() - 2);
     }
-    RequestMsg::unescapeChars(out);
-    RequestMsg::printResult(out, retCode);
+    unescapeChars(out);
+    printResult(out, retCodeParse);
     return 0;
 }
 
@@ -365,26 +375,22 @@ void Send::getError() {
     cout << "send <recipient> <subject> <body>\n";
 }
 
-Logout::Logout(): RequestMsg("logout", 0){
-    
-}
+Logout::Logout(): RequestMsg("logout", 0) { }
 
 string Logout::buildString(vector<string> commnadArgs) {
     string token;
-    if (RequestMsg::getToken(token) != 0) {
+    if (getToken(token) != 0) {
         return "";
     }
-    string builtStr = "(" + request + " " + token + ")";
-    return builtStr;
+    return "(" + request + " " + token + ")";
 }
 
 int Logout::handleOutput(string &out) {
-    int retCode = RequestMsg::resultParse(out);
-    int code = removeToken();
-    if (retCode == 0) {
-        out.erase(0,1).pop_back();
-    }
-    RequestMsg::printResult(out, code + retCode);
+    int retCodeParse = resultParse(out);
+    int retCodeToken = removeToken();
+    if (retCodeParse == returnCodes::SUCCESS and retCodeToken == returnCodes::SUCCESS)
+        out = out.substr(1, out.size() - 2);
+    printResult(out, retCodeParse + retCodeToken);
     return 0;
 }
 
