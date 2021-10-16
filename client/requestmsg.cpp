@@ -105,33 +105,23 @@ int RequestMsg::removeToken() {
 
 int RequestMsg::escapeChars(vector<string> &input) {
     for (auto & item : input) {
-        string temp;
+        // DEBUG: Input of regex
+        // cout << "Input is:" << item << endl;
+        string temp;       
         for(char& c : item) {
             switch (c) {
-                case '\n':
-                    temp += "\\n";
-                    continue;
-                case '\t':
-                    temp += "\\t";
-                    continue;
-                case '"':
-                case '\\':
-                    temp += "\\";
-                    break;
-                default:
-                    break;
+                case '\n':  temp += "\\n";        break;
+                case '\t':  temp += "\\t";        break;
+                case '\\':  temp += "\\\\";       break;
+                case '"':   temp += "\\\"";        break;
+                default:    temp += c;            break;
             }
-            temp += c;
         }
-        item = temp;
-    }
+        // DEBUG: Escaped of regex
+        // cout << "Escaped is:" << temp << endl;
 
-    // DEBUG: Print escaped strings
-    for (auto & item : input) {
-        // DEBUG: 
-        cout << item << endl;
-    }
-    
+        item = temp;
+    }    
     return returnCodes::SUCCESS;
 }
 
@@ -301,46 +291,20 @@ string Fetch::buildString(vector<string> commnadArgs) {
 }
 
 int Fetch::handleOutput(string &out) {
-    cout << out << endl;
     int retCodeParse = resultParse(out);
     if (retCodeParse == 0) {
         vector<string> matches;
         splitByRegex(out, matches);
-        // string from, subject, msg;
-        // string delimiter = "\" \"";
-        // array<string, 3> t;
-        // string response = out;
 
-        // response = response.substr(1, response.length() - 2);
+        unescapeChars(matches.at(0));
+        unescapeChars(matches.at(1));
+        unescapeChars(matches.at(2));
 
-        // for (size_t i = 0; i < t.size() - 1; i++) {
-        //     t[i] = response.substr(i, response.find(delimiter) + 1); 
-        //     response.erase(0, t[i].length());
-        // }
-        // t.back() = response.erase(0,1);
+        matches.at(0) = matches.at(0).substr(1, matches.at(0).size() - 2);
+        matches.at(1) = matches.at(1).substr(1, matches.at(1).size() - 2);
+        matches.at(2) = matches.at(2).substr(1, matches.at(2).size() - 2);
 
-        // string uno = t[0].substr(1, t[0].length() - 2);
-        // string dos = t[1].substr(1, t[1].length() - 3);
-        // string tres = t[2].substr(1, t[2].length() - 2);
-
-        string uno, dos, tres;
-        unescapeChars(uno);
-        unescapeChars(dos);
-        unescapeChars(tres);
-
-        uno = matches.at(0);
-        dos = matches.at(1);
-        tres = matches.at(2);
-
-        uno.substr(1, matches.at(0).size() - 2);
-        dos.substr(1, matches.at(1).size() - 2);
-        tres.substr(1, matches.at(2).size() - 2);
-
-
-
-        
-
-        out = "\n\nFrom: " + uno + "\nSubject: " + dos + "\n\n" + tres;
+        out = "\n\nFrom: " + matches.at(0) + "\nSubject: " + matches.at(1) + "\n\n" + matches.at(2);
     }
     printResult(out, retCodeParse);
     return 0;
