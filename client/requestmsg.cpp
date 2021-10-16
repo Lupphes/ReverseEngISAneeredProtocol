@@ -165,10 +165,11 @@ int RequestMsg::getNumArg() {
 
 Register::Register(): RequestMsg("register", 2) {}
 
-string Register::buildString(vector<string> commnadArgs) {
+int Register::buildString(vector<string> commnadArgs, string &result) {
     escapeChars(commnadArgs);
     string convPass = toBase64(commnadArgs[1]);
-    return "(" + request + " \"" + commnadArgs[0] + "\" \"" + convPass + "\")";
+    result = "(" + request + " \"" + commnadArgs[0] + "\" \"" + convPass + "\")";
+    return returnCodes::SUCCESS;
 }
 
 int Register::handleOutput(string &out) {
@@ -187,10 +188,11 @@ void Register::getError() {
 
 Login::Login(): RequestMsg("login", 2) { }
 
-string Login::buildString(vector<string> commnadArgs) {  
+int Login::buildString(vector<string> commnadArgs, string &result) {  
     escapeChars(commnadArgs);
     string convPass = toBase64(commnadArgs[1]);
-    return "(" + request + " \"" + commnadArgs[0] + "\" \"" + convPass + "\")";
+    result = "(" + request + " \"" + commnadArgs[0] + "\" \"" + convPass + "\")";
+    return returnCodes::SUCCESS;
 }
 
 int Login::handleOutput(string &out) {
@@ -228,12 +230,14 @@ void Login::getError() {
 
 List::List(): RequestMsg("list", 0) { }
 
-string List::buildString(vector<string> commnadArgs) {
+int List::buildString(vector<string> commnadArgs, string &result) {
     string token;
-    if (getToken(token) != 0) {
-        return "";
+    int retCodeToken;
+    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
+        return retCodeToken;
     }
-    return "(" + request + " " + token + ")";
+    result = "(" + request + " " + token + ")";
+    return returnCodes::SUCCESS;
 }
 
 int List::handleOutput(string &out) {
@@ -249,10 +253,7 @@ int List::handleOutput(string &out) {
         for (uint64_t i = 0; i < matches.size(); i += 2) {
             from = matches.at(i).substr(1, matches.at(i).size() - 2);
             subject = matches.at(i+1).substr(1, matches.at(i+1).size() - 2);
-            response += "\n" + to_string(((i + 1)/2)+1) + ":\n  From: " + from + "\n  Subject: " + subject + "\n";
-        }
-        if (not response.empty()) {
-            response.pop_back();
+            response += "\n" + to_string(((i + 1)/2)+1) + ":\n  From: " + from + "\n  Subject: " + subject;
         }
         out = response;
     }
@@ -267,15 +268,17 @@ void List::getError() {
 
 Fetch::Fetch(): RequestMsg("fetch", 1) { }
 
-string Fetch::buildString(vector<string> commnadArgs) {
-    if (isNumber(commnadArgs[0]) != 0) {
-        return "";
+int Fetch::buildString(vector<string> commnadArgs, string &result) {
+    int retCodeParse, retCodeToken;
+    if ((retCodeParse = isNumber(commnadArgs[0])) != returnCodes::SUCCESS) {
+        return retCodeParse;
     }
     string token;
-    if (getToken(token) != 0) {
-        return "";
+    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
+        return retCodeToken;
     }
-    return "(" + request + " " + token + " " + commnadArgs[0] + ")";
+    result = "(" + request + " " + token + " " + commnadArgs[0] + ")";
+    return returnCodes::SUCCESS;
 }
 
 int Fetch::handleOutput(string &out) {
@@ -304,13 +307,15 @@ void Fetch::getError() {
 
 Send::Send(): RequestMsg("send", 3) { }
 
-string Send::buildString(vector<string> commnadArgs) {
+int Send::buildString(vector<string> commnadArgs, string &result) {
+    int retCodeToken;
     escapeChars(commnadArgs);
     string token;
-    if (getToken(token) != returnCodes::SUCCESS) {
-        return "";
+    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
+        return retCodeToken;
     }
-    return "(" + request + " " + token + " \"" + commnadArgs[0] + "\" \"" + commnadArgs[1] + "\" \"" + commnadArgs[2] + "\")";
+    result = "(" + request + " " + token + " \"" + commnadArgs[0] + "\" \"" + commnadArgs[1] + "\" \"" + commnadArgs[2] + "\")";
+    return returnCodes::SUCCESS;
 }
 
 int Send::handleOutput(string &out) {
@@ -329,12 +334,14 @@ void Send::getError() {
 
 Logout::Logout(): RequestMsg("logout", 0) { }
 
-string Logout::buildString(vector<string> commnadArgs) {
+int Logout::buildString(vector<string> commnadArgs, string &result) {
     string token;
-    if (getToken(token) != 0) {
-        return "";
+    int retCodeToken;
+    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
+        return retCodeToken;
     }
-    return "(" + request + " " + token + ")";
+    result = "(" + request + " " + token + ")";
+    return returnCodes::SUCCESS;
 }
 
 int Logout::handleOutput(string &out) {

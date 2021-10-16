@@ -19,10 +19,14 @@ int RequestHandler::buildClientString(int argc, char** argv, int &args_processed
         commnadArgs.push_back(argv[i]);
     }
 
-    builtString = command->buildString(commnadArgs);
-    if (builtString == "") {
-        return returnCodes::ERR_BUILDING_STRING;
+    string result;
+
+    int retCode;
+    if ((retCode = command->buildString(commnadArgs, result)) != 0) {
+        return retCode;
     }
+
+    builtString = result;
 
     return returnCodes::SUCCESS;
 }
