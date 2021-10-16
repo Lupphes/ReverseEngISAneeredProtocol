@@ -17,7 +17,6 @@ int RequestMsg::resultParse(string &out) {
     regex regPacketOk("^\\((ok ){1}.*\\)$");
     regex regPacketErr("^\\((err ){1}.*\\)$");
     
-    cout << out << "\n";
     if (regex_match(out, regPacketOk)) {
         out = out.substr(4, out.length() - 5);
     } else if (regex_match(out, regPacketErr)) {
@@ -110,11 +109,11 @@ int RequestMsg::escapeChars(vector<string> &input) {
         string temp;       
         for(char& c : item) {
             switch (c) {
-                case '\n':  temp += "\\n";        break;
-                case '\t':  temp += "\\t";        break;
-                case '\\':  temp += "\\\\";       break;
-                case '"':   temp += "\\\"";        break;
-                default:    temp += c;            break;
+                case '\n':  temp += "\\n";      break;
+                case '\t':  temp += "\\t";      break;
+                case '\\':  temp += "\\\\";     break;
+                case '"':   temp += "\\\"";     break;
+                default:    temp += c;          break;
             }
         }
         // DEBUG: Escaped of regex
@@ -154,7 +153,7 @@ int RequestMsg::unescapeChars(string &input) {
     }
     input = temp;
     // DEBUG:
-    cout << input << endl;
+    // cout << "Unescaped is: " << input << endl;
     return returnCodes::SUCCESS;
 }
 
@@ -211,11 +210,11 @@ int Login::handleOutput(string &out) {
 int RequestMsg::splitByRegex(string str, vector<string> &matches) { 
     string raw_str = R"(\"(\\.|[^\"])*\")";
     regex regSpace(raw_str);
-    regex regBrac("");
 
    std::smatch match;
     while (std::regex_search(str, match, regSpace)) {
-        cout << "[" << match.str() << "]" << '\n';
+        // DEBUG: Regex
+        // cout << "[" << match.str() << "]" << '\n';
         matches.push_back(match.str());
         str = match.suffix().str();
     }
@@ -238,38 +237,24 @@ string List::buildString(vector<string> commnadArgs) {
 }
 
 int List::handleOutput(string &out) {
-    cout << out << endl;
+    // cout << out << endl;
     int retCode = resultParse(out);
     string response = out;
 
     if (retCode == 0) {
-        response = response.substr(2, response.length() - 1);
-        string message, word;
-        string wordDelimiter = "\" \"";
-        string msgDelimiter = ") (";
-        string result = "\n";
-        size_t pos = 0;
-        size_t pos2 = 0; 
-        int index = 1;
+        vector<string> matches;
+        splitByRegex(out, matches);
+        string response, from, subject;
 
-        while ((pos = response.find(msgDelimiter)) != string::npos) {
-            message = response.substr(0, pos);
-            message = message.erase(0, 2);
-
-            while ((pos2 = message.find(wordDelimiter)) != string::npos) {
-                word = message.substr(1, pos2 - 1);
-                message.erase(0, pos2 + wordDelimiter.length());
-                message = message.substr(0, message.length() - 1);
-                
-                result += to_string(index) + ":\n  From: " + word.c_str() + "\n  Subject: " + message.c_str() + "\n";
-                index++;
-            }    
-            response.erase(0, pos + msgDelimiter.length());
+        for (size_t i = 1; i <= matches.size()-1; i += 2) {
+            from = matches.at(i-1).substr(1, matches.at(i-1).size() - 2);
+            subject = matches.at(i).substr(1, matches.at(i).size() - 2);
+            response += "\n" + to_string(i - i/2) + ":\n  From: " + from + "\n  Subject: " + subject + "\n";
         }
-        response = result;
+        out = response;
     }
-    RequestMsg::unescapeChars(response);
-    RequestMsg::printResult(response, retCode);
+    RequestMsg::unescapeChars(out);
+    RequestMsg::printResult(out, retCode);
     return 0;
 }
 

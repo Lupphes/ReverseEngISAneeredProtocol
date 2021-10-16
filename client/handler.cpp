@@ -33,7 +33,7 @@ int RequestHandler::exchangeData(int &sock, string &builtString) {
     string recievedString;
     
     // DEBUG: Built string
-    cout << builtString << endl;
+    // cout << builtString << endl;
     sendCode = send(sock, builtString.c_str(), builtString.length(), 0);
     if (sendCode != -1) {
         while ((readCode = recv(sock, buffer, bufferLenght - 1, 0))) {
