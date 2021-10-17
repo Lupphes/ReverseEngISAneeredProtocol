@@ -2,21 +2,25 @@
 	07.10.2021
 	isa.lua v1.0
 	Wireshark Lua ISAMail protocol dissector
+
+	TODO
+	1. Comment and make magical constants deseapear
 --]]
 
-local function parseMessageBySpace(removeFL, string)
+
+local function parseMessageByRename(string, default)
+	local pattSep;
+	if default then
+		pattSep = '"(.-)"'
+	else
+		pattSep = '%(%d-%s".-%)'
+	end
 	local chunks = {}
-	for substring in string:gmatch("%S+") do
-		if removeFL then
-			table.insert(chunks, substring:sub(1, -2):sub(2))
-		else
-			table.insert(chunks, substring)
-		end
+	for substring in string:gmatch(pattSep) do
+		table.insert(chunks, substring)
 	end
 	return chunks
 end
-
-
 
 local function LaunchISAMaildissector()
 	-- Define all values
@@ -80,47 +84,94 @@ local function LaunchISAMaildissector()
 			treeRoot:add(isamailproto.fields.request, parsedStatusMsg)
 
 			if parsedStatusMsg == 'register' or parsedStatusMsg == 'login' then
-				local chunks = parseMessageBySpace(true, clintOrServerParsed)
+				local chunks = parseMessageByRename(clintOrServerParsed, true)
 				
 				treeRoot:add(isamailproto.fields.login, chunks[1])
 				treeRoot:add(isamailproto.fields.password, chunks[2])
-
+				if parsedStatusMsg == 'register' then
+					pinfo.cols.info = 'Register request – ' .. chunks[1]
+				else
+					pinfo.cols.info = 'Login request – ' .. chunks[1]
+				end
 			elseif parsedStatusMsg == 'list' or parsedStatusMsg == 'logout' then
 				treeRoot:add(isamailproto.fields.token, clintOrServerParsed:sub(1, -2):sub(2))
+				local chunks = parseMessageByRename(clintOrServerParsed, true)
+				
+				if parsedStatusMsg == 'list' then
+					pinfo.cols.info = 'List request – ' .. chunks[1]
+				else
+					pinfo.cols.info = 'Logout request – ' .. chunks[1]
+				end
 
 			elseif parsedStatusMsg == 'fetch' then
-				local chunks = parseMessageBySpace(false, clintOrServerParsed)
+				local chunks = parseMessageByRename(clintOrServerParsed, true)
 
-				treeRoot:add(isamailproto.fields.token, chunks[1]:sub(1, -2):sub(2))
-				treeRoot:add(isamailproto.fields.id, chunks[2])
+				treeRoot:add(isamailproto.fields.token, chunks[1]:sub(1, -2):sub(2)) -- Removing " "
+				treeRoot:add(isamailproto.fields.id, clintOrServerParsed:sub(clintOrServerParsed:len()))
+				pinfo.cols.info = 'Fetch request – ' .. clintOrServerParsed:sub(clintOrServerParsed:len())
 
 			elseif parsedStatusMsg == 'send' then
-
-				local chunks = parseMessageBySpace(true, clintOrServerParsed)
+				local chunks = parseMessageByRename(clintOrServerParsed, true)
 
 				treeRoot:add(isamailproto.fields.token, chunks[1])
 				treeRoot:add(isamailproto.fields.recipient, chunks[2])
 				treeRoot:add(isamailproto.fields.subject, chunks[3])
 				treeRoot:add(isamailproto.fields.msg, chunks[4])
+				pinfo.cols.info = 'Send request –> ' .. chunks[2] .. ', ' .. chunks[3]
 			end
-			
 		elseif parsedStatusMsg == protocolError then
+			pinfo.cols.info = 'Response Error'
 			treeRoot:add(isamailproto.fields.status, parsedStatusMsg)
 			treeRoot:add(isamailproto.fields.msg, clintOrServerParsed)
-		elseif parsedStatusMsg == protocolSuccess then
-			-- maybe will add later
+		elseif parsedStatusMsg == protocolSuccess then			
+			if clintOrServerParsed:match('^"registered user ') then
+				pinfo.cols.info = 'Response register – ' .. string.sub(clintOrServerParsed, 17, -2) -- Removing " "
+				treeRoot:add(isamailproto.fields.login, string.sub(clintOrServerParsed, 17, -2)) -- Removing " "
+
+			elseif clintOrServerParsed:match('^"user logged in" ') then
+				pinfo.cols.info = 'Response login – ' .. string.sub(clintOrServerParsed, 19, -2) -- Removing " "
+				treeRoot:add(isamailproto.fields.token, string.sub(clintOrServerParsed, 19, -2)) -- Removing " "
+
+			elseif clintOrServerParsed:match('"message sent"') then
+				pinfo.cols.info = 'Response send – ' .. string.sub(clintOrServerParsed, 2, -2) -- Removing " "
+
+			elseif clintOrServerParsed:match('"logged out"') then
+				pinfo.cols.info = 'Response logged out'
+			
+			elseif clintOrServerParsed:match('^%(%)') or clintOrServerParsed:match('^%(%(') then
+				
+				if clintOrServerParsed == "()" then
+					pinfo.cols.info = 'Response list – No message'
+				else
+					local chunksMsg = parseMessageByRename(clintOrServerParsed, false)
+					pinfo.cols.info = 'Response list – ' .. #(chunksMsg) .. ' messages'
+					for i = 1,#(chunksMsg),1 
+					do 
+						local chunks = parseMessageByRename(chunksMsg[1], true)
+
+						local treeMsg = treeRoot:add(isamailproto.fields.msg, i)
+						treeMsg:add(isamailproto.fields.recipient, chunks[1])
+						treeMsg:add(isamailproto.fields.subject, chunks[2])	
+						print(chunksMsg[i]) 
+					end
+				end
+			elseif clintOrServerParsed:match('^%("(.*)"%s"(.*)"%s"(.*)"%)$') then
+				local chunks = parseMessageByRename(clintOrServerParsed, true)
+				pinfo.cols.info = 'Response fetch – ' .. chunks[1] .. ', ' .. chunks[2]
+				treeRoot:add(isamailproto.fields.recipient, chunks[1])
+				treeRoot:add(isamailproto.fields.subject, chunks[2])
+				treeRoot:add(isamailproto.fields.msg, chunks[3])
+			else
+				pinfo.cols.info = 'Unknown packet'
+			end
 			treeRoot:add(isamailproto.fields.status, parsedStatusMsg)
 			treeRoot:add(isamailproto.fields.msg, clintOrServerParsed)
 		else
 			return
 		end
-
 		treeRoot:add(isamailproto.fields.length, bufferDataLength)
-
 	end
-
-
-	DissectorTable.get('tcp.port'):add(69, isamailproto)
+	DissectorTable.get('tcp.port'):add(60000, isamailproto)
 end
 
 local function Main()
