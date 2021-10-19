@@ -197,29 +197,53 @@ int Login::buildString(vector<string> commnadArgs, string &result) {
 
 int Login::handleOutput(string &out) {
     int retCode = resultParse(out);
+    int retCodeParse;
     if (retCode == returnCodes::SUCCESS) {
         vector<string> matches;
         splitByRegex(out, matches);
-        out = matches.at(0).substr(1, matches.at(0).size() - 2);
-        createToken(matches.at(1));
+        out = matches.at(0);
+        if ((retCodeParse = createToken("\"" + matches.at(1) + "\"")) != returnCodes::SUCCESS) {
+            return retCodeParse;
+        }
     }
     unescapeChars(out);
     printResult(out, retCode);
-
-    return 0;
+    return returnCodes::SUCCESS;
 }
 
 int RequestMsg::splitByRegex(string str, vector<string> &matches) { 
-    string raw_str = R"(\"(\\.|[^\"])*\")";
-    regex regSpace(raw_str);
-
-   std::smatch match;
-    while (std::regex_search(str, match, regSpace)) {
-        // DEBUG: Regex
-        // cout << "[" << match.str() << "]" << '\n';
-        matches.push_back(match.str());
-        str = match.suffix().str();
+    int length = str.length();
+    string temp;
+    bool flagMark = false;
+    for (int i = 0; i < length; ++i) {
+        if (str[i] == '"') {
+            if (flagMark) {
+                // DEBUG: Parsing
+                // cout << "[" << temp << "]" << '\n';
+                matches.push_back(temp);
+                temp = "";
+                flagMark = false;
+            } else flagMark = true;
+            continue;
+        } else if (str[i] == '\\') {         
+            temp += str[i];   
+            i++;
+        }
+        if (flagMark) temp += str[i];     
     }
+
+    // Previous regex parse
+    // string raw_str = R"(\"(\\.|[^\"])*\")";
+    // regex regSpace(raw_str);
+
+    // std::smatch match;
+ 
+    // while (std::regex_search(str, match, regSpace)) {
+    //     // DEBUG: Regex
+    //     // cout << "[" << match.str() << "]" << '\n';
+    //     matches.push_back(match.str());
+    //     str = match.suffix().str();
+    // }
 
     return returnCodes::SUCCESS;
 }
@@ -241,25 +265,24 @@ int List::buildString(vector<string> commnadArgs, string &result) {
 }
 
 int List::handleOutput(string &out) {
-    // cout << out << endl;
     int retCode = resultParse(out);
     string response = out;
 
-    if (retCode == 0) {
+    if (retCode == returnCodes::SUCCESS) {
         vector<string> matches;
         splitByRegex(out, matches);
         string response, from, subject;
 
         for (uint64_t i = 0; i < matches.size(); i += 2) {
-            from = matches.at(i).substr(1, matches.at(i).size() - 2);
-            subject = matches.at(i+1).substr(1, matches.at(i+1).size() - 2);
+            from = matches.at(i);
+            subject = matches.at(i+1);
             response += "\n" + to_string(((i + 1)/2)+1) + ":\n  From: " + from + "\n  Subject: " + subject;
         }
         out = response;
     }
-    RequestMsg::unescapeChars(out);
-    RequestMsg::printResult(out, retCode);
-    return 0;
+    unescapeChars(out);
+    printResult(out, retCode);
+    return returnCodes::SUCCESS;
 }
 
 void List::getError() {
@@ -291,14 +314,10 @@ int Fetch::handleOutput(string &out) {
         unescapeChars(matches.at(1));
         unescapeChars(matches.at(2));
 
-        matches.at(0) = matches.at(0).substr(1, matches.at(0).size() - 2);
-        matches.at(1) = matches.at(1).substr(1, matches.at(1).size() - 2);
-        matches.at(2) = matches.at(2).substr(1, matches.at(2).size() - 2);
-
         out = "\n\nFrom: " + matches.at(0) + "\nSubject: " + matches.at(1) + "\n\n" + matches.at(2);
     }
     printResult(out, retCodeParse);
-    return 0;
+    return returnCodes::SUCCESS;
 }
 
 void Fetch::getError() {
@@ -325,7 +344,7 @@ int Send::handleOutput(string &out) {
     }
     unescapeChars(out);
     printResult(out, retCodeParse);
-    return 0;
+    return returnCodes::SUCCESS;
 }
 
 void Send::getError() {
@@ -350,7 +369,7 @@ int Logout::handleOutput(string &out) {
     if (retCodeParse == returnCodes::SUCCESS and retCodeToken == returnCodes::SUCCESS)
         out = out.substr(1, out.size() - 2);
     printResult(out, retCodeParse + retCodeToken);
-    return 0;
+    return returnCodes::SUCCESS;
 }
 
 void Logout::getError() {
