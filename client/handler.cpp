@@ -22,8 +22,18 @@ int RequestHandler::buildClientString(int argc, char** argv, int &args_processed
     string result;
 
     int retCode;
-    if ((retCode = command->buildString(commnadArgs, result)) != 0) {
-        return retCode;
+    try {
+        if ((retCode = command->buildString(commnadArgs, result)) != 0)
+            return retCode;
+    } catch (const std::regex_error& e) {
+        cerr << "Unexpected parsing error occured: " << e.what();
+        return returnCodes::ERR_UNEXPECTED_REGEX_ERROR;
+    } catch (const std::out_of_range& e) {
+        cerr << "Unexpected parsing error occured: " << e.what();
+        return returnCodes::ERR_UNEXPECTED_PARSING_ERROR;
+    } catch (const std::exception& e) {
+        cerr << "Unexpected error occured: " << e.what();
+        return returnCodes::ERR_UNEXPECTED_ERROR;
     }
 
     builtString = result;
@@ -53,8 +63,23 @@ int RequestHandler::exchangeData(int &sock, string &builtString) {
         return returnCodes::ERR_SEND_UNSUCCESSFUL;
     }
     
-    if (this->command->handleOutput(recievedString) != returnCodes::SUCCESS) {
-        return returnCodes::ERR_INCORRECT_OUTPUT;
+    try {
+        if (this->command->handleOutput(recievedString) != returnCodes::SUCCESS) {
+            return returnCodes::ERR_INCORRECT_OUTPUT;
+        }
     }
+    catch (const std::regex_error& e) {
+        cerr << "Unexpected parsing error occured: " << e.what();
+        return returnCodes::ERR_UNEXPECTED_REGEX_ERROR;
+    }
+    catch (const std::out_of_range& e) {
+        cerr << "Unexpected parsing error occured: " << e.what();
+        return returnCodes::ERR_UNEXPECTED_PARSING_ERROR;
+    }
+    catch (const std::exception& e) {
+        cerr << "Unexpected error occured: " << e.what();
+        return returnCodes::ERR_UNEXPECTED_ERROR;
+    }
+
     return returnCodes::SUCCESS;
 }

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <regex> // For exceptions
 #define bufferLenght 60 // Length of the array set to an average lenght of packet
 
 using namespace std;
