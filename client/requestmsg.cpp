@@ -218,8 +218,6 @@ int RequestMsg::splitByRegex(string str, vector<string> &matches) {
     for (int i = 0; i < length; ++i) {
         if (str[i] == '"') {
             if (flagMark) {
-                // DEBUG: Parsing
-                // cout << "[" << temp << "]" << '\n';
                 matches.push_back(temp);
                 temp = "";
                 flagMark = false;
@@ -316,7 +314,8 @@ int Fetch::handleOutput(string &out) {
 
         out = "\n\nFrom: " + matches.at(0) + "\nSubject: " + matches.at(1) + "\n\n" + matches.at(2);
     }
-    printResult(out, retCodeParse);
+    if (retCodeParse == 0) cout << "SUCCESS: " << out << "\n";
+    else cout << "ERROR: " << out << "\n";
     return returnCodes::SUCCESS;
 }
 

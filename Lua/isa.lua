@@ -2,24 +2,46 @@
 	07.10.2021
 	isa.lua v1.0
 	Wireshark Lua ISAMail protocol dissector
-
-	TODO
-	1. Comment and make magical constants deseapear
 --]]
 
 
-local function parseMessageByRename(string, default)
-	local pattSep;
-	if default then
-		pattSep = '"(.-)"'
-	else
-		pattSep = '%(%d-%s".-%)'
-	end
+local function parseMessageByRename(str, default, checkEnd)
+	local length = str:len()
+	local temp = ''
+	flagMark = false
+	skipflag = false
 	local chunks = {}
-	for substring in string:gmatch(pattSep) do
-		table.insert(chunks, substring)
+
+	if checkEnd then
+		local endStr = str:gsub('"(.-)[^\\]"', ''):sub(-1)
+		return endStr
+	else
+		for i = 1, #str do
+			if skipflag then
+				skipflag = false
+				goto continue
+			end
+			local c = str:sub(i,i)
+			if c == '"' then
+				if flagMark then
+					table.insert(chunks, temp)
+					temp = '';
+					flagMark = false
+				else
+					flagMark = true
+				end
+				goto continue
+			elseif c == '\\' then
+				temp = temp .. c
+				skipflag = true
+			end
+			if flagMark then
+				temp = temp .. c
+			end
+			::continue::
+		end
+		return chunks
 	end
-	return chunks
 end
 
 local function LaunchISAMaildissector()
@@ -51,29 +73,25 @@ local function LaunchISAMaildissector()
 		local protoName = isamailproto.name
 		
 		local bufferDataLength = buffer:len()
-
+		
 		-- We expect at least 7 bytes and full lenght of msg, otherwise we don't dissect
 		if bufferDataLength < 7 or bufferDataLength ~= buffer:reported_len() then
 			return
 		end
 
-		local parsedDataFromBuffer = ''
-		
-		for i = 1, bufferDataLength - 2, 1
-		do
-			newchar = buffer(i,1):string()
-			if newchar == nil then
-				return
-			else
-				parsedDataFromBuffer = parsedDataFromBuffer .. newchar
-			end
-		end
+		local lastChar = parseMessageByRename(buffer():string(), true, true)
 
-		print('Data recieved: ' .. parsedDataFromBuffer)
+		print("lastchar" .. lastChar)
+		if (lastChar ~= ')') then
+			pinfo.desegment_len = DESEGMENT_ONE_MORE_SEGMENT
+			return
+		end
+	
+		print('Data recieved: ' .. buffer():string())
 		  
-		local parsedStatusMsg = parsedDataFromBuffer:match('%S+')
-		local statusMsgLength = parsedDataFromBuffer:match('%S+'):len()
-		local clintOrServerParsed = parsedDataFromBuffer:sub(statusMsgLength + 2, -1) -- Add 2 to remove index and space
+		local parsedStatusMsg = buffer():string():match('%S+'):sub(2, -1)
+		local statusMsgLength = buffer():string():match('%S+'):len()
+		local clintOrServerParsed = buffer():string():sub(statusMsgLength + 2, -2) -- Add 2 to remove index and space
 
 		pinfo.cols.protocol = protoName
 
@@ -84,7 +102,7 @@ local function LaunchISAMaildissector()
 			treeRoot:add(isamailproto.fields.request, parsedStatusMsg)
 
 			if parsedStatusMsg == 'register' or parsedStatusMsg == 'login' then
-				local chunks = parseMessageByRename(clintOrServerParsed, true)
+				local chunks = parseMessageByRename(clintOrServerParsed, true, false)
 				
 				treeRoot:add(isamailproto.fields.login, chunks[1])
 				treeRoot:add(isamailproto.fields.password, chunks[2])
@@ -95,7 +113,7 @@ local function LaunchISAMaildissector()
 				end
 			elseif parsedStatusMsg == 'list' or parsedStatusMsg == 'logout' then
 				treeRoot:add(isamailproto.fields.token, clintOrServerParsed:sub(1, -2):sub(2))
-				local chunks = parseMessageByRename(clintOrServerParsed, true)
+				local chunks = parseMessageByRename(clintOrServerParsed, true, false)
 				
 				if parsedStatusMsg == 'list' then
 					pinfo.cols.info = 'List request – ' .. chunks[1]
@@ -104,14 +122,14 @@ local function LaunchISAMaildissector()
 				end
 
 			elseif parsedStatusMsg == 'fetch' then
-				local chunks = parseMessageByRename(clintOrServerParsed, true)
+				local chunks = parseMessageByRename(clintOrServerParsed, true, false)
 
 				treeRoot:add(isamailproto.fields.token, chunks[1]:sub(1, -2):sub(2)) -- Removing " "
 				treeRoot:add(isamailproto.fields.id, clintOrServerParsed:sub(clintOrServerParsed:len()))
 				pinfo.cols.info = 'Fetch request – ' .. clintOrServerParsed:sub(clintOrServerParsed:len())
 
 			elseif parsedStatusMsg == 'send' then
-				local chunks = parseMessageByRename(clintOrServerParsed, true)
+				local chunks = parseMessageByRename(clintOrServerParsed, true, false)
 
 				treeRoot:add(isamailproto.fields.token, chunks[1])
 				treeRoot:add(isamailproto.fields.recipient, chunks[2])
@@ -143,20 +161,18 @@ local function LaunchISAMaildissector()
 				if clintOrServerParsed == "()" then
 					pinfo.cols.info = 'Response list – No message'
 				else
-					local chunksMsg = parseMessageByRename(clintOrServerParsed, false)
+					local chunksMsg = parseMessageByRename(clintOrServerParsed, false, false)
 					pinfo.cols.info = 'Response list – ' .. #(chunksMsg) .. ' messages'
 					for i = 1,#(chunksMsg),1 
 					do 
-						local chunks = parseMessageByRename(chunksMsg[1], true)
-
 						local treeMsg = treeRoot:add(isamailproto.fields.msg, i)
-						treeMsg:add(isamailproto.fields.recipient, chunks[1])
-						treeMsg:add(isamailproto.fields.subject, chunks[2])	
-						print(chunksMsg[i]) 
+						treeMsg:add(isamailproto.fields.recipient, chunksMsg[1])
+						treeMsg:add(isamailproto.fields.subject, chunksMsg[2])	
+						
 					end
 				end
 			elseif clintOrServerParsed:match('^%("(.*)"%s"(.*)"%s"(.*)"%)$') then
-				local chunks = parseMessageByRename(clintOrServerParsed, true)
+				local chunks = parseMessageByRename(clintOrServerParsed, true, false)
 				pinfo.cols.info = 'Response fetch – ' .. chunks[1] .. ', ' .. chunks[2]
 				treeRoot:add(isamailproto.fields.recipient, chunks[1])
 				treeRoot:add(isamailproto.fields.subject, chunks[2])
