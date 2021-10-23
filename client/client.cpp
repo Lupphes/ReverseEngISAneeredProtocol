@@ -1,5 +1,11 @@
-// client.cpp : Defines the entry point for the application.
-//
+/**
+ * ISA Projekt
+ * Ondřej Sloup – (xsloup02)
+ * Reverse-engineering neznámeho protokolu (Ing. Koutenský)
+ * 
+ * client.cpp
+ * v1.0 – 23.10.2021
+ */
 
 #include "client.hpp"
 
