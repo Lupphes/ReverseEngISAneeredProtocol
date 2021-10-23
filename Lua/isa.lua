@@ -5,6 +5,14 @@
 	isa.lua v2.0 – 23.10.2021
 	
 	Author: Ondřej Sloup (xsloup02)
+
+	I have used this tutorial to learn about dissectors:
+	1) https://www.youtube.com/watch?v=I4nf23HywmI
+	2) https://didierstevens.com/files/workshops/botnet01-dissector.lua
+	and I used some of the tips
+	I also used recommended:
+	1) https://gitlab.com/wireshark/wireshark/-/wikis/Lua/Dissectors
+	2) https://gitlab.com/wireshark/wireshark/-/wikis/Lua/Examples
 --]]
 
 --[[

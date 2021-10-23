@@ -1,14 +1,19 @@
-# Makefile for Writing Make Files Example
+#	
+#	Makefile for ISA project
+#	Author: Ondřej Sloup (xsloup02)
+#
+
+# Makefile for build the whole file
  
-# *****************************************************
-# Variables to control Makefile operation
- 
+# Makefile parameters
 CC = g++
-CFLAGS = -Wall -g #-Werror -Wpedantic
- 
-# ****************************************************
-# Targets needed to bring the executable up to date
- 
-client: main.cpp client.hpp handler.hpp requestmsg.hpp errorcodes.hpp
-	$(CC) $(CFLAGS) -o ./../build/client  main.cpp client.cpp handler.cpp requestmsg.cpp 
- 
+CFLAGS = # -Wall -g -Werror -Wpedantic
+
+# Options for makefile 
+all: clean build
+
+clean:
+	rm -f ./client
+
+build: main.cpp client.hpp handler.hpp requestmsg.hpp errorcodes.hpp
+	$(CC) $(CFLAGS) -o client main.cpp client.cpp handler.cpp requestmsg.cpp 
