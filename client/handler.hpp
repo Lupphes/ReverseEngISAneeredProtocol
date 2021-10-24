@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <regex> // For exceptions
-#define bufferlength 60 // Length of the array set to an average length of packet
+#define bufferLenght 60 // Length of the array set to an average length of packet
 
 using namespace std;
 

@@ -26,9 +26,9 @@ int RequestMsg::resultParse(string &out) {
     regex regPacketOk("^\\((ok ){1}.*\\)$");
     regex regPacketErr("^\\((err ){1}.*\\)$");
     
-    if (regex_match(out, regPacketOk)) {
+    if (regex_match(out, regPacketOk))
         out = out.substr(4, out.length() - 5);
-    } else if (regex_match(out, regPacketErr)) {
+    else if (regex_match(out, regPacketErr)) {
         out = out.substr(5, out.length() - 6);
         return returnCodes::SERVER_ERR;
     } else {
@@ -113,8 +113,6 @@ int RequestMsg::removeToken() {
 
 int RequestMsg::escapeChars(vector<string> &input) {
     for (auto & item : input) {
-        // DEBUG: Input of regex
-        // cout << "Input is:" << item << endl;
         string temp;       
         for(char& c : item) {
             switch (c) {
@@ -125,9 +123,6 @@ int RequestMsg::escapeChars(vector<string> &input) {
                 default:    temp += c;          break;
             }
         }
-        // DEBUG: Escaped of regex
-        // cout << "Escaped is:" << temp << endl;
-
         item = temp;
     }    
     return returnCodes::SUCCESS;
@@ -161,8 +156,6 @@ int RequestMsg::unescapeChars(string &input) {
         temp += input[i];
     }
     input = temp;
-    // DEBUG:
-    // cout << "Unescaped is: " << input << endl;
     return returnCodes::SUCCESS;
 }
 
@@ -185,9 +178,8 @@ int Register::buildString(vector<string> commandArgs, string &result) {
 
 int Register::handleOutput(string &out) {
     int retCode = resultParse(out);
-    if (retCode == returnCodes::SUCCESS) {
+    if (retCode == returnCodes::SUCCESS)
         out = out.substr(1, out.size() - 2);
-    }
     unescapeChars(out);
     printResult(out, retCode);
     return 0;
@@ -213,9 +205,8 @@ int Login::handleOutput(string &out) {
         vector<string> matches;
         splitByRegex(out, matches);
         out = matches.at(0);
-        if ((retCodeParse = createToken("\"" + matches.at(1) + "\"")) != returnCodes::SUCCESS) {
+        if ((retCodeParse = createToken("\"" + matches.at(1) + "\"")) != returnCodes::SUCCESS)
             return retCodeParse;
-        }
     }
     unescapeChars(out);
     printResult(out, retCode);
@@ -244,7 +235,6 @@ int RequestMsg::splitByRegex(string str, vector<string> &matches) {
     // Previous regex parse
     // string raw_str = R"(\"(\\.|[^\"])*\")";
     // regex regSpace(raw_str);
-
     // std::smatch match;
  
     // while (std::regex_search(str, match, regSpace)) {
@@ -266,9 +256,8 @@ List::List(): RequestMsg("list", 0) { }
 int List::buildString(vector<string> commandArgs, string &result) {
     string token;
     int retCodeToken;
-    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
+    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS)
         return retCodeToken;
-    }
     result = "(" + request + " " + token + ")";
     return returnCodes::SUCCESS;
 }
@@ -302,13 +291,11 @@ Fetch::Fetch(): RequestMsg("fetch", 1) { }
 
 int Fetch::buildString(vector<string> commandArgs, string &result) {
     int retCodeParse, retCodeToken;
-    if ((retCodeParse = isNumber(commandArgs[0])) != returnCodes::SUCCESS) {
+    if ((retCodeParse = isNumber(commandArgs[0])) != returnCodes::SUCCESS)
         return retCodeParse;
-    }
     string token;
-    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
+    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS)
         return retCodeToken;
-    }
     result = "(" + request + " " + token + " " + commandArgs[0] + ")";
     return returnCodes::SUCCESS;
 }
@@ -340,18 +327,16 @@ int Send::buildString(vector<string> commandArgs, string &result) {
     int retCodeToken;
     escapeChars(commandArgs);
     string token;
-    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
+    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS)
         return retCodeToken;
-    }
     result = "(" + request + " " + token + " \"" + commandArgs[0] + "\" \"" + commandArgs[1] + "\" \"" + commandArgs[2] + "\")";
     return returnCodes::SUCCESS;
 }
 
 int Send::handleOutput(string &out) {
     int retCodeParse = resultParse(out);
-    if (retCodeParse == returnCodes::SUCCESS) {
+    if (retCodeParse == returnCodes::SUCCESS)
         out = out.substr(1, out.size() - 2);
-    }
     unescapeChars(out);
     printResult(out, retCodeParse);
     return returnCodes::SUCCESS;
@@ -366,9 +351,8 @@ Logout::Logout(): RequestMsg("logout", 0) { }
 int Logout::buildString(vector<string> commandArgs, string &result) {
     string token;
     int retCodeToken;
-    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
+    if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS)
         return retCodeToken;
-    }
     result = "(" + request + " " + token + ")";
     return returnCodes::SUCCESS;
 }
