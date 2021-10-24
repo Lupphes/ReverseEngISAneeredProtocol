@@ -16,6 +16,7 @@ protected:
     
 public:
     RequestMsg(string request, int numberOfArgs);
+    virtual ~RequestMsg();
     virtual int buildString(vector<string> commnadArgs, string &result) = 0;
     virtual int handleOutput(string &out) = 0;
     virtual void getError() = 0;

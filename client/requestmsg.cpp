@@ -68,7 +68,7 @@ int RequestMsg::getToken(string &token) {
     fstream tokenFile;
 
 	tokenFile.open(filename, ios::in);
-	if (not tokenFile) {
+	if (!tokenFile) {
 		cout << "Not logged in\n";
         return returnCodes::ERR_CANT_OPEN_FILE;
 	}
@@ -83,7 +83,7 @@ int RequestMsg::createToken(string token) {
     fstream tokenFile;
 
     tokenFile.open(filename, ios::out);
-    if (not tokenFile) {
+    if (!tokenFile) {
         cerr << "Error while saving the token\n";
         return returnCodes::ERR_CANT_CREATE_FILE;
 	}
@@ -129,7 +129,7 @@ int RequestMsg::unescapeChars(string &input) {
     int length = input.length();
     for (int i = 0; i < length; ++i) {
         
-        if (input[i] == '\\' and i+1 <= length) {
+        if (input[i] == '\\' && i+1 <= length) {
             switch (input[i+1]) {
                 case 'n':
                     temp += "\n";
@@ -162,6 +162,8 @@ RequestMsg::RequestMsg(string request, int numberOfArgs): request(request), numb
 int RequestMsg::getNumArg() {
     return this->numberOfArgs;
 }
+
+RequestMsg::~RequestMsg() {}
 
 Register::Register(): RequestMsg("register", 2) {}
 
@@ -365,7 +367,7 @@ int Logout::buildString(vector<string> commnadArgs, string &result) {
 int Logout::handleOutput(string &out) {
     int retCodeParse = resultParse(out);
     int retCodeToken = removeToken();
-    if (retCodeParse == returnCodes::SUCCESS and retCodeToken == returnCodes::SUCCESS)
+    if (retCodeParse == returnCodes::SUCCESS && retCodeToken == returnCodes::SUCCESS)
         out = out.substr(1, out.size() - 2);
     printResult(out, retCodeParse + retCodeToken);
     return returnCodes::SUCCESS;

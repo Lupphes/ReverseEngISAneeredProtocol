@@ -1,15 +1,18 @@
 #pragma once
 
+/* This is enum class of all return codes */
 enum returnCodes {
-    SUCCESS = 0,
-    PRINT_HELP = 3,
-    ERR_NO_ARGS,
-    ERR_ARG,
-    ERR_UNKNOWN_COMMAND,
-    ERR_ID_NOT_NUMBER,
-    ERR_BUILDING_STRING,
+    SUCCESS = 0, // Success
+    PRINT_HELP = 3, // User was presented with help
+    ERR_NO_ARGS, // No arguments were set to client
+    ERR_ARG, // Wrong arguments were set to client
+    ERR_UNKNOWN_COMMAND, // Unknown command was set by user
+    ERR_ID_NOT_NUMBER, // Command fetch got parameter which was not a number
+    ERR_BUILDING_STRING, // Error while building a string which will be send to server
     ERR_HOST_NOT_RESOLVED,
     ERR_SOCKET_ERROR,
+    ERR_CANT_RESOLVE,
+    ERR_GET_ADDR_INFO,
     ERR_SERVER_CONNECTION,
     ERR_SEND_UNSUCCESSFUL,
     ERR_RECV_UNSUCCESSFUL,

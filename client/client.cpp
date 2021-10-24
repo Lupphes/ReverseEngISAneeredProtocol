@@ -32,6 +32,9 @@ void printHelpMessage() {
 
 int parseArgs(int argc, char** argv, int &args_processed, string &address, int &port) {
     args_processed = 1;
+    // I used regex from this website to make sure that the port is correct
+    // https://ihateregex.io/expr/port/
+    // https://en.cppreference.com/w/cpp/string/basic_string/stol
     regex regPort("^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$");
 
     if (argc == 1) {
@@ -41,16 +44,16 @@ int parseArgs(int argc, char** argv, int &args_processed, string &address, int &
 
     const char* const short_opts = "a:p:h";
     const option long_opts[] = {
-            {"address", required_argument, nullptr, 'a'},
-            {"port", required_argument, nullptr, 'p'},
-            {"help", no_argument, nullptr, 'h'},
-            {nullptr, no_argument, nullptr, 0}
+        {"address", required_argument, nullptr, 'a'},
+        {"port", required_argument, nullptr, 'p'},
+        {"help", no_argument, nullptr, 'h'},
+        {nullptr, no_argument, nullptr, 0}
     };
 
     while (true) {
         const auto opt = getopt_long(argc, argv, short_opts, long_opts, nullptr);
 
-        if (-1 == opt)
+        if (opt == -1)
             break;
 
         switch (opt) {
@@ -60,15 +63,13 @@ int parseArgs(int argc, char** argv, int &args_processed, string &address, int &
                 break;
 
             case 'p':
-                // https://ihateregex.io/expr/port/
-                // https://en.cppreference.com/w/cpp/string/basic_string/stol
                 if (regex_match(optarg, regPort)) {
                     try {
-                        port = std::stoi(optarg, nullptr);
-                    } catch (const std::invalid_argument & e) {
+                        port = stoi(optarg, nullptr);
+                    } catch (const invalid_argument & e) {
                         cerr << "Port number is not valid\n";
                         return returnCodes::ERR_ARG;
-                    } catch (const std::out_of_range & e) {
+                    } catch (const out_of_range & e) {
                         cerr << "Port number is out of range\n";
                         return returnCodes::ERR_ARG;
                     }
@@ -90,41 +91,47 @@ int parseArgs(int argc, char** argv, int &args_processed, string &address, int &
     return returnCodes::SUCCESS;
 }
 
-int createSocketAndConnect(int &sock, string& address, int &port) {
-    // TCP Client code
-    
-    // Resolving hostname
-    struct sockaddr_in ipAddress;
-    struct hostent* hostname;
+int createSocketAndConnect(int &sock, string& address, int &port) {  
+    // Prepraring values for connection and socket
+    int retCode;
+    struct addrinfo ipAddress = {}, *res;
+    ipAddress.ai_family = AF_UNSPEC;
+    ipAddress.ai_socktype = SOCK_STREAM;
+    ipAddress.ai_protocol = IPPROTO_TCP;
 
-    // Prepare connection
-    hostname = gethostbyname(address.c_str());
-    if (hostname == NULL) {
-        cerr << "Couldn't find a host\n";
-        return returnCodes::ERR_HOST_NOT_RESOLVED;
+    // Resolving a hostname
+    // I used snippets from this website: 
+    // https://stackoverflow.com/questions/52727565/client-in-c-use-gethostbyname-or-getaddrinfo
+    // I decided not to use gethostbyname() nor gethostbyname2() since IPv6 is not supported
+    // and it is not the best approach  
+    if ((retCode = getaddrinfo(address.c_str(), to_string(port).c_str(), &ipAddress, &res)) != 0) {
+        cerr << "getaddrinfo: " << gai_strerror(retCode) << "\n";
+        return returnCodes::ERR_GET_ADDR_INFO;
     }
 
-    // Creating a socket
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    // Resolve hostname
+    for(struct addrinfo *addr = res; addr != NULL; addr = addr->ai_next) {
+        sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+        if (sock == -1) {
+            retCode = errno;
+            continue;
+        }
 
-    // Creating of the socket for comunication
+        // Connect to server
+        if (connect(sock, addr->ai_addr, addr->ai_addrlen) == 0)
+            break;
+
+        retCode = errno;
+        close(sock);
+        sock = -1;
+    }
+
+    freeaddrinfo(res);
+
     if (sock == -1) {
-        cout << "Can't create a socket\n";
-        return returnCodes::ERR_SOCKET_ERROR;
+        cerr << strerror(retCode) << ": " << address << "\n";
+        return returnCodes::ERR_CANT_RESOLVE;
     }
-   
-    ipAddress.sin_family = AF_INET; 
-    ipAddress.sin_addr.s_addr = inet_addr(inet_ntoa (*((struct in_addr*)hostname->h_addr_list[0])));
-    ipAddress.sin_port = htons(port);
 
-    // DEBUG: String for outputing IP and port
-    // cout << inet_ntoa (*((struct in_addr*)hostname->h_addr_list[0])) << ":" << port << endl;
-   
-    // Connection to the socket 
-    if (connect(sock, (sockaddr*)&ipAddress, sizeof(ipAddress)) < 0) {
-        cerr << "Client can't connect to the server\n";
-        return returnCodes::ERR_SERVER_CONNECTION;
-    }
-   
     return returnCodes::SUCCESS;
 }

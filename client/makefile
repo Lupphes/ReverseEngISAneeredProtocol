@@ -7,7 +7,7 @@
  
 # Makefile parameters
 CC = g++
-CFLAGS = # -Wall -g -Werror -Wpedantic
+CFLAGS = -std=c++11 #-Wall -g -Werror -Wpedantic
 
 # Options for makefile 
 all: clean build
