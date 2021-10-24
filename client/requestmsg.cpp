@@ -1,3 +1,12 @@
+/**
+ * ISA Projekt
+ * Ondřej Sloup – (xsloup02)
+ * Reverse-engineering neznámeho protokolu (Ing. Koutenský)
+ * 
+ * requestmsg.cpp
+ * v1.0 – 23.10.2021
+ */
+
 #include "requestmsg.hpp"
 #include "errorcodes.hpp"
 
@@ -48,16 +57,16 @@ string RequestMsg::toBase64(string pass) {
     for (const char &c: char_array)
         binaryStr += bitset<8>(c).to_string();
 
-    int lenght_bin = binaryStr.length();
-    if((lenght_bin % 3) == 1)
+    int length_bin = binaryStr.length();
+    if((length_bin % 3) == 1)
         padding += "=";
-    else if ((lenght_bin % 3) == 2)
+    else if ((length_bin % 3) == 2)
         padding += "==";
 
-    while ((lenght_bin = binaryStr.length()) % 6 != 0)
+    while ((length_bin = binaryStr.length()) % 6 != 0)
         binaryStr += "0";
 
-    for (int i = 0; i < lenght_bin; i+=6)
+    for (int i = 0; i < length_bin; i+=6)
         final += base64[stoi("00" + binaryStr.substr(i, 6), nullptr, 2)];
 
     return final += padding;
@@ -167,10 +176,10 @@ RequestMsg::~RequestMsg() {}
 
 Register::Register(): RequestMsg("register", 2) {}
 
-int Register::buildString(vector<string> commnadArgs, string &result) {
-    escapeChars(commnadArgs);
-    string convPass = toBase64(commnadArgs[1]);
-    result = "(" + request + " \"" + commnadArgs[0] + "\" \"" + convPass + "\")";
+int Register::buildString(vector<string> commandArgs, string &result) {
+    escapeChars(commandArgs);
+    string convPass = toBase64(commandArgs[1]);
+    result = "(" + request + " \"" + commandArgs[0] + "\" \"" + convPass + "\")";
     return returnCodes::SUCCESS;
 }
 
@@ -190,10 +199,10 @@ void Register::getError() {
 
 Login::Login(): RequestMsg("login", 2) { }
 
-int Login::buildString(vector<string> commnadArgs, string &result) {  
-    escapeChars(commnadArgs);
-    string convPass = toBase64(commnadArgs[1]);
-    result = "(" + request + " \"" + commnadArgs[0] + "\" \"" + convPass + "\")";
+int Login::buildString(vector<string> commandArgs, string &result) {  
+    escapeChars(commandArgs);
+    string convPass = toBase64(commandArgs[1]);
+    result = "(" + request + " \"" + commandArgs[0] + "\" \"" + convPass + "\")";
     return returnCodes::SUCCESS;
 }
 
@@ -254,7 +263,7 @@ void Login::getError() {
 
 List::List(): RequestMsg("list", 0) { }
 
-int List::buildString(vector<string> commnadArgs, string &result) {
+int List::buildString(vector<string> commandArgs, string &result) {
     string token;
     int retCodeToken;
     if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
@@ -291,16 +300,16 @@ void List::getError() {
 
 Fetch::Fetch(): RequestMsg("fetch", 1) { }
 
-int Fetch::buildString(vector<string> commnadArgs, string &result) {
+int Fetch::buildString(vector<string> commandArgs, string &result) {
     int retCodeParse, retCodeToken;
-    if ((retCodeParse = isNumber(commnadArgs[0])) != returnCodes::SUCCESS) {
+    if ((retCodeParse = isNumber(commandArgs[0])) != returnCodes::SUCCESS) {
         return retCodeParse;
     }
     string token;
     if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
         return retCodeToken;
     }
-    result = "(" + request + " " + token + " " + commnadArgs[0] + ")";
+    result = "(" + request + " " + token + " " + commandArgs[0] + ")";
     return returnCodes::SUCCESS;
 }
 
@@ -327,14 +336,14 @@ void Fetch::getError() {
 
 Send::Send(): RequestMsg("send", 3) { }
 
-int Send::buildString(vector<string> commnadArgs, string &result) {
+int Send::buildString(vector<string> commandArgs, string &result) {
     int retCodeToken;
-    escapeChars(commnadArgs);
+    escapeChars(commandArgs);
     string token;
     if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {
         return retCodeToken;
     }
-    result = "(" + request + " " + token + " \"" + commnadArgs[0] + "\" \"" + commnadArgs[1] + "\" \"" + commnadArgs[2] + "\")";
+    result = "(" + request + " " + token + " \"" + commandArgs[0] + "\" \"" + commandArgs[1] + "\" \"" + commandArgs[2] + "\")";
     return returnCodes::SUCCESS;
 }
 
@@ -354,7 +363,7 @@ void Send::getError() {
 
 Logout::Logout(): RequestMsg("logout", 0) { }
 
-int Logout::buildString(vector<string> commnadArgs, string &result) {
+int Logout::buildString(vector<string> commandArgs, string &result) {
     string token;
     int retCodeToken;
     if ((retCodeToken = getToken(token)) != returnCodes::SUCCESS) {

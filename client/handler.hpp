@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <regex> // For exceptions
-#define bufferLenght 60 // Length of the array set to an average lenght of packet
+#define bufferlength 60 // Length of the array set to an average length of packet
 
 using namespace std;
 
@@ -57,10 +57,10 @@ public:
      * 
      *  Creates a class that determines what needs to be done
      *
-     * @param[in] argc number of arguments
-     * @param[in] argv list of the arguments
-     * @param[out] args_processed vector of command variables
-     * @param[out] builtString string prepared to send to the server
+     * @param[in] int number of arguments
+     * @param[in] char** list of the arguments
+     * @param[out] int vector of command variables
+     * @param[out] string string prepared to send to the server
      * @return int which signalizes a return code (0 is a success)
      */
     int buildClientString(int argc, char** argv, int &args_processed, string &builtString);
@@ -71,8 +71,8 @@ public:
      * 
      * Socket is created in another function
      * 
-     * @param[out] sock opened socket where data will be sent
-     * @param[out] builtString string prepared to send to the server
+     * @param[out] int opened socket where data will be sent
+     * @param[out] string string prepared to send to the server
      * @return int which signalizes a return code (0 is a success)
      */
     int exchangeData(int &sock, string &builtString);

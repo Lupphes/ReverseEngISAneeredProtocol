@@ -97,7 +97,7 @@ local function LaunchISAMaildissector()
 		
 		local bufferDataLength = buffer:len()
 		
-		-- We expect at least 7 bytes and full lenght of msg, otherwise we don't dissect
+		-- We expect at least 7 bytes and full length of msg, otherwise we don't dissect
 		if bufferDataLength < 7 or bufferDataLength ~= buffer:reported_len() then
 			return
 		end

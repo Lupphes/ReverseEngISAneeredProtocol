@@ -26,16 +26,16 @@ int RequestHandler::buildClientString(int argc, char** argv, int &args_processed
     }
     
     // Remove first command (general) and send parameters to build a string
-    vector<string> commnadArgs;
+    vector<string> commandArgs;
     for (int i = args_processed + 1; i < argc; i++) {
-        commnadArgs.push_back(argv[i]);
+        commandArgs.push_back(argv[i]);
     }
 
     string result;
 
     int retCode;
     try {
-        if ((retCode = command->buildString(commnadArgs, result)) != 0)
+        if ((retCode = command->buildString(commandArgs, result)) != 0)
             return retCode;
     } catch (const std::regex_error& e) {
         cerr << "Unexpected parsing error occured: " << e.what();

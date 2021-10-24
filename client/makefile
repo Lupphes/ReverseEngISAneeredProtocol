@@ -1,6 +1,9 @@
 #	
 #	Makefile for ISA project
+# 	Reverse-engineering neznámeho protokolu (Ing. Koutenský)
 #	Author: Ondřej Sloup (xsloup02)
+#	
+#	v1.0 – 23.10.2021
 #
 
 # Makefile for build the whole file
