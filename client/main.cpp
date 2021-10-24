@@ -39,9 +39,8 @@ int main(int argc, char **argv) {
     if ((retCode = genMap.buildClientString(argc, argv, args_processed, builtString)) != 0)
         return retCode;
 
-    if ((retCode = createSocketAndConnect(sock, address, port)) != 0) {
+    if ((retCode = createSocketAndConnect(sock, address, port)) != 0)
         return retCode;
-    }
 
     if ((retCode = genMap.exchangeData(sock, builtString)) != 0) {
         close(sock);

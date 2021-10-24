@@ -53,8 +53,7 @@ int parseArgs(int argc, char** argv, int &args_processed, string &address, int &
     while (true) {
         const auto opt = getopt_long(argc, argv, short_opts, long_opts, nullptr);
 
-        if (opt == -1)
-            break;
+        if (opt == -1) break;
 
         switch (opt) {
             case 'a':
@@ -118,8 +117,7 @@ int createSocketAndConnect(int &sock, string& address, int &port) {
         }
 
         // Connect to server
-        if (connect(sock, addr->ai_addr, addr->ai_addrlen) == 0)
-            break;
+        if (connect(sock, addr->ai_addr, addr->ai_addrlen) == 0) break;
 
         retCode = errno;
         close(sock);
@@ -130,7 +128,7 @@ int createSocketAndConnect(int &sock, string& address, int &port) {
 
     if (sock == -1) {
         cerr << strerror(retCode) << ": " << address << "\n";
-        return returnCodes::ERR_CANT_RESOLVE;
+        return returnCodes::ERR_HOST_NOT_RESOLVED;
     }
 
     return returnCodes::SUCCESS;
