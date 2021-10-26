@@ -59,6 +59,10 @@ public:
 
     /**
      * Converts password to base64 format
+     * I learnt about base64 from this page:
+     * https://base64.guru/learn/base64-algorithm/encode
+     * and implemented the algorithm how it was presented there,
+     * but I added padding as it is requirement in this case
      * 
      * @param[in] string passwords which will be converted
      * @return string returns converted string to base64
