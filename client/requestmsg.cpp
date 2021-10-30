@@ -19,7 +19,10 @@
 
 void RequestMsg::printResult(string &result, int code) {
     if (code == 0) cout << "SUCCESS: " << result << "\n";
-    else cout << "ERROR: " << result << "\n";
+    else {
+        result = result.substr(1, result.length() - 2);
+        cout << "ERROR: " << result << "\n";
+    }
 }
 
 int RequestMsg::resultParse(string &out) {
@@ -312,8 +315,11 @@ int Fetch::handleOutput(string &out) {
 
         out = "\n\nFrom: " + matches.at(0) + "\nSubject: " + matches.at(1) + "\n\n" + matches.at(2);
     }
-    if (retCodeParse == 0) cout << "SUCCESS: " << out << "\n";
-    else cout << "ERROR: " << out << "\n";
+    if (retCodeParse == 0) cout << "SUCCESS: " << out;
+    else {
+        out = out.substr(1, out.length() - 2);
+        cout << "ERROR: " << out << "\n";
+    }
     return returnCodes::SUCCESS;
 }
 
