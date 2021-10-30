@@ -149,8 +149,8 @@ local function LaunchISAMaildissector()
 				local chunks = parseMessage(clintOrServerParsed, false)
 
 				treeRoot:add(isamailproto.fields.token, chunks[1]:sub(1, -2):sub(2)) -- Removing " "
-				treeRoot:add(isamailproto.fields.id, clintOrServerParsed:sub(clintOrServerParsed:len()))
-				pinfo.cols.info = 'Fetch request – ' .. clintOrServerParsed:sub(clintOrServerParsed:len())
+				treeRoot:add(isamailproto.fields.id, clintOrServerParsed:sub(chunks[1]:len() + 4)) -- Fetch + token sub
+				pinfo.cols.info = 'Fetch request – ' .. clintOrServerParsed:sub(chunks[1]:len() + 4) -- Fetch + token sub
 
 			elseif parsedStatusMsg == 'send' then
 				local chunks = parseMessage(clintOrServerParsed, false)
@@ -186,12 +186,12 @@ local function LaunchISAMaildissector()
 					pinfo.cols.info = 'Response list – No message'
 				else
 					local chunksMsg = parseMessage(clintOrServerParsed, false)
-					pinfo.cols.info = 'Response list – ' .. #(chunksMsg) .. ' messages'
-					for i = 1,#(chunksMsg)/2,1 
+					pinfo.cols.info = 'Response list – ' .. #(chunksMsg)/2 .. ' messages'
+					for i = 1,#(chunksMsg),2
 					do 
-						local treeMsg = treeRoot:add(isamailproto.fields.msg, i)
-						treeMsg:add(isamailproto.fields.recipient, chunksMsg[1])
-						treeMsg:add(isamailproto.fields.subject, chunksMsg[2])	
+						local treeMsg = treeRoot:add(isamailproto.fields.msg, (i/2)+0.5)
+						treeMsg:add(isamailproto.fields.recipient, chunksMsg[i])
+						treeMsg:add(isamailproto.fields.subject, chunksMsg[i+1])	
 						
 					end
 				end
