@@ -187,7 +187,7 @@ local function LaunchISAMaildissector()
 				else
 					local chunksMsg = parseMessage(clintOrServerParsed, false)
 					pinfo.cols.info = 'Response list – ' .. #(chunksMsg) .. ' messages'
-					for i = 1,#(chunksMsg),1 
+					for i = 1,#(chunksMsg)/2,1 
 					do 
 						local treeMsg = treeRoot:add(isamailproto.fields.msg, i)
 						treeMsg:add(isamailproto.fields.recipient, chunksMsg[1])
